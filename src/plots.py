@@ -30,12 +30,12 @@ COLORS = {
     "emissions": "#FB7185",
 }
 
-# Layout base para todas las gráficas (dark theme)
+# Layout base para todas las gráficas (light/clean theme)
 LAYOUT_DEFAULTS = dict(
-    template="plotly_dark",
+    template="plotly_white",
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(15,23,42,0.6)",
-    font=dict(family="Inter, sans-serif", color="#e2e8f0"),
+    plot_bgcolor="#ffffff",
+    font=dict(family="Inter, sans-serif", color="#1e293b"),
     legend=dict(
         orientation="h",
         yanchor="bottom", y=1.02,
@@ -412,14 +412,14 @@ def plot_radar_performance(kpis: Dict[str, float], params: Dict[str, Any]) -> go
     
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100], gridcolor="rgba(100,200,255,0.1)"),
-            bgcolor="rgba(15,23,42,0.6)",
+            radialaxis=dict(visible=True, range=[0, 100], gridcolor="rgba(0,0,0,0.1)"),
+            bgcolor="#ffffff",
         ),
         title="Radar de Desempeño Multidimensional",
         showlegend=False,
         height=450,
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color="#e2e8f0"),
+        font=dict(family="Inter, sans-serif", color="#1e293b"),
     )
     
     return fig

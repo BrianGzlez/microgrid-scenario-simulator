@@ -1,17 +1,16 @@
 """
-Microgrid Scenario Simulator v2.0
-Dashboard profesional reactivo - la simulación se ejecuta automáticamente
-al modificar cualquier parámetro (sin necesidad de botón Run).
+Microgrid Scenario Simulator v3.0
+Dashboard profesional con fondo blanco. Los parámetros van en su propia pestaña.
+La simulación se ejecuta automáticamente.
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 import json
-from pathlib import Path
 
-from src.model import run_simulation, run_stochastic_simulation
-from src.metrics import calculate_kpis, get_kpi_descriptions
+from src.model import run_stochastic_simulation
+from src.metrics import calculate_kpis
 from src.scenarios import (
     save_scenario, get_comparison_table,
     export_scenarios_csv, export_results_csv
@@ -29,38 +28,18 @@ st.set_page_config(
     page_title="Microgrid Scenario Simulator",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # =============================================================================
-# CSS PROFESIONAL
+# CSS - Fondo blanco, limpio, profesional
 # =============================================================================
 st.markdown("""
 <style>
-    /* Header styling */
-    .main-header {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        padding: 1.5rem 2rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        border: 1px solid rgba(100, 200, 255, 0.15);
-    }
-    .main-header h1 {
-        color: #e0e0e0;
-        font-size: 2rem;
-        margin: 0;
-        font-weight: 700;
-    }
-    .main-header p {
-        color: #a0a0a0;
-        font-size: 0.95rem;
-        margin: 0.3rem 0 0 0;
-    }
-
     /* KPI card styling */
     .kpi-card {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        border: 1px solid rgba(100, 200, 255, 0.12);
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
         border-radius: 10px;
         padding: 1rem 1.2rem;
         text-align: center;
@@ -68,65 +47,52 @@ st.markdown("""
     }
     .kpi-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
     .kpi-value {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
         font-weight: 700;
-        color: #60a5fa;
+        color: #1e40af;
         margin: 0.3rem 0;
     }
     .kpi-label {
-        font-size: 0.78rem;
-        color: #94a3b8;
+        font-size: 0.75rem;
+        color: #64748b;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        font-weight: 500;
+        font-weight: 600;
     }
-    .kpi-good { color: #34d399; }
-    .kpi-warn { color: #fbbf24; }
-    .kpi-bad { color: #f87171; }
+    .kpi-good { color: #16a34a; }
+    .kpi-warn { color: #d97706; }
+    .kpi-bad { color: #dc2626; }
 
     /* Section headers */
     .section-header {
-        color: #e2e8f0;
+        color: #1e293b;
         font-size: 1.2rem;
         font-weight: 600;
         padding: 0.5rem 0;
-        border-bottom: 2px solid rgba(96, 165, 250, 0.3);
-        margin: 1.5rem 0 1rem 0;
+        border-bottom: 2px solid #2563eb;
+        margin: 1rem 0 1rem 0;
     }
 
-    /* Sidebar styling */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-    }
-    section[data-testid="stSidebar"] .stMarkdown h1,
-    section[data-testid="stSidebar"] .stMarkdown h2,
-    section[data-testid="stSidebar"] .stMarkdown h3 {
-        color: #e2e8f0;
-    }
-
-    /* Tab styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 6px;
-        padding: 8px 16px;
-        font-weight: 500;
-    }
-
-    /* Hide default streamlit branding */
+    /* Hide default branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
-    /* Plotly chart containers */
-    .plot-container {
-        border: 1px solid rgba(100, 200, 255, 0.08);
-        border-radius: 10px;
-        padding: 0.5rem;
-        margin: 0.5rem 0;
+    /* Parameter section styling */
+    .param-section {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+    }
+    .param-title {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -134,42 +100,57 @@ st.markdown("""
 # =============================================================================
 # HEADER
 # =============================================================================
-st.markdown("""
-<div class="main-header">
-    <h1>⚡ Microgrid Scenario Simulator</h1>
-    <p>Simulador What-If para microrredes multinodales · Generación renovable · BESS · EVs · Calidad de energía · Optimización multi-objetivo</p>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("# ⚡ Microgrid Scenario Simulator")
+st.markdown(
+    "Simulador What-If para microrredes multinodales · Generación renovable · "
+    "BESS · EVs · Calidad de energía · Optimización multi-objetivo"
+)
+st.divider()
 
 # --- Session state ---
 if "saved_scenarios" not in st.session_state:
     st.session_state.saved_scenarios = []
 
 # =============================================================================
-# SIDEBAR
+# TABS PRINCIPALES - Parámetros es una pestaña más
 # =============================================================================
-with st.sidebar:
-    st.markdown("## 🎛️ Parámetros")
-    st.caption("La simulación se actualiza automáticamente al modificar cualquier valor.")
-    st.divider()
+tab_params, tab_overview, tab_energy, tab_battery, tab_pq, tab_economics, tab_compare = st.tabs([
+    "⚙️ Parámetros",
+    "📊 Overview",
+    "⚡ Energy Balance",
+    "🔋 Battery",
+    "📈 Power Quality",
+    "💰 Economics",
+    "🔄 Scenarios"
+])
 
-    # --- 1. Escenario General ---
-    with st.expander("📋 Escenario General", expanded=True):
+# =============================================================================
+# TAB: PARÁMETROS
+# =============================================================================
+with tab_params:
+    st.markdown('<div class="section-header">Configuración del Escenario</div>',
+                unsafe_allow_html=True)
+    st.caption("Modifique los parámetros y los resultados se actualizarán automáticamente en las demás pestañas.")
+
+    # --- Fila 1: General + Renovable + BESS ---
+    col_a, col_b, col_c = st.columns(3)
+
+    with col_a:
+        st.markdown("##### 📋 Escenario General")
         scenario_name = st.text_input("Nombre del escenario", value="Base Scenario")
         horizon_hours = 24
         num_nodes = st.slider("Número de nodos", 1, 20, 5)
         num_stochastic = st.slider("Escenarios estocásticos", 1, 10, 3)
 
-    # --- 2. Generación Renovable ---
-    with st.expander("☀️ Generación Renovable", expanded=False):
+        st.markdown("##### ☀️ Generación Renovable")
         pv_capacity = st.slider("Solar PV (kW)", 0, 2000, 500, 50)
         wind_capacity = st.slider("Eólica (kW)", 0, 2000, 300, 50)
         solar_factor = st.slider("Factor irradiancia", 0.0, 1.0, 0.75, 0.05)
         wind_factor = st.slider("Factor viento", 0.0, 1.0, 0.60, 0.05)
-        renewable_variability = st.slider("Variabilidad", 0.0, 0.50, 0.15, 0.05)
+        renewable_variability = st.slider("Variabilidad renovable", 0.0, 0.50, 0.15, 0.05)
 
-    # --- 3. BESS ---
-    with st.expander("🔋 BESS", expanded=False):
+    with col_b:
+        st.markdown("##### 🔋 Batería BESS")
         bess_capacity = st.slider("Capacidad (kWh)", 0, 5000, 1000, 100)
         bess_max_charge = st.slider("Carga máx (kW)", 0, 2000, 250, 50)
         bess_max_discharge = st.slider("Descarga máx (kW)", 0, 2000, 250, 50)
@@ -180,23 +161,27 @@ with st.sidebar:
         bess_discharge_eff = st.slider("η descarga (%)", 80, 100, 95) / 100.0
         bess_initial_soh = st.slider("SoH inicial (%)", 50, 100, 100) / 100.0
 
-    # --- 4. Demanda y EVs ---
-    with st.expander("🚗 Demanda y EVs", expanded=False):
+    with col_c:
+        st.markdown("##### 🚗 Demanda y EVs")
         base_demand = st.slider("Demanda base (kW)", 100, 2000, 600, 50)
         demand_variability = st.slider("Variabilidad demanda (%)", 0, 50, 20) / 100.0
         num_evs = st.slider("Número de EVs", 0, 200, 40, 5)
         ev_charger_power = st.number_input("Potencia cargador (kW)", value=7.4, step=0.1)
         ev_simultaneity = st.slider("Simultaneidad EV", 0.0, 1.0, 0.35, 0.05)
 
-    # --- 5. Red Principal ---
-    with st.expander("🔌 Red Principal", expanded=False):
+        st.markdown("##### 🔌 Red Principal")
         buy_price = st.number_input("Precio compra (USD/kWh)", value=0.20, step=0.01, format="%.3f")
         sell_price = st.number_input("Precio venta (USD/kWh)", value=0.10, step=0.01, format="%.3f")
         max_buy = st.slider("Máx compra (kW)", 0, 3000, 1000, 100)
         max_sell = st.slider("Máx venta (kW)", 0, 3000, 1000, 100)
 
-    # --- 6. No Renovables ---
-    with st.expander("🏭 No Renovables", expanded=False):
+    st.divider()
+
+    # --- Fila 2: No Renovables + Calidad + Costos + Pesos ---
+    col_d, col_e, col_f = st.columns(3)
+
+    with col_d:
+        st.markdown("##### 🏭 No Renovables")
         diesel_available = st.checkbox("Diésel disponible", False)
         gas_available = st.checkbox("Gas natural disponible", False)
         diesel_max = st.slider("Máx diésel (kW)", 0, 2000, 500, 50)
@@ -207,8 +192,8 @@ with st.sidebar:
         solar_ef = st.number_input("Emisión solar (kg/kWh)", value=0.05, step=0.005, format="%.3f")
         wind_ef = st.number_input("Emisión eólica (kg/kWh)", value=0.015, step=0.005, format="%.3f")
 
-    # --- 7. Calidad de Energía ---
-    with st.expander("📊 Calidad de Energía", expanded=False):
+    with col_e:
+        st.markdown("##### 📊 Calidad de Energía")
         thd_limit = st.number_input("THD límite (%)", value=5.0, step=0.5)
         thd_base_ev = st.number_input("THD base EV (%)", value=3.0, step=0.5)
         ev_harmonic = st.number_input("Armónico EV (%)", value=8.0, step=0.5)
@@ -217,8 +202,19 @@ with st.sidebar:
         freq_nominal = st.number_input("Frecuencia (Hz)", value=60.0, step=1.0)
         freq_max_dev = st.number_input("Δf máx (Hz)", value=0.5, step=0.1)
 
-    # --- 8. Costos ---
-    with st.expander("💰 Inversión", expanded=False):
+        st.markdown("##### ⚖️ Pesos Optimización")
+        w_economic = st.slider("Económico", 0.0, 1.0, 0.35, 0.05)
+        w_technical = st.slider("Técnico", 0.0, 1.0, 0.25, 0.05)
+        w_environmental = st.slider("Ambiental", 0.0, 1.0, 0.25, 0.05)
+        w_renewable = st.slider("Renovable", 0.0, 1.0, 0.15, 0.05)
+        total_w = w_economic + w_technical + w_environmental + w_renewable
+        if abs(total_w - 1.0) > 0.01:
+            st.warning(f"⚠️ Suma: {total_w:.2f} (debe ser 1.0)")
+        else:
+            st.success(f"✓ Pesos suman {total_w:.2f}")
+
+    with col_f:
+        st.markdown("##### 💰 Costos de Inversión")
         pv_cost = st.number_input("Costo PV (USD/kW)", value=900, step=50)
         wind_cost = st.number_input("Costo eólico (USD/kW)", value=1300, step=50)
         bess_cost = st.number_input("Costo BESS (USD/kWh)", value=400, step=50)
@@ -227,20 +223,8 @@ with st.sidebar:
         discount_rate = st.slider("Tasa descuento (%)", 1, 20, 8) / 100.0
         project_lifetime = st.slider("Vida útil (años)", 5, 40, 20)
 
-    # --- 9. Pesos ---
-    with st.expander("⚖️ Pesos Optimización", expanded=False):
-        w_economic = st.slider("Económico", 0.0, 1.0, 0.35, 0.05)
-        w_technical = st.slider("Técnico", 0.0, 1.0, 0.25, 0.05)
-        w_environmental = st.slider("Ambiental", 0.0, 1.0, 0.25, 0.05)
-        w_renewable = st.slider("Renovable", 0.0, 1.0, 0.15, 0.05)
-        total_w = w_economic + w_technical + w_environmental + w_renewable
-        if abs(total_w - 1.0) > 0.01:
-            st.warning(f"Suma: {total_w:.2f} ≠ 1.0")
-        else:
-            st.success(f"✓ Suma: {total_w:.2f}")
-
 # =============================================================================
-# CONSTRUIR PARÁMETROS Y EJECUTAR SIMULACIÓN REACTIVA
+# CONSTRUIR PARÁMETROS Y EJECUTAR SIMULACIÓN
 # =============================================================================
 params = {
     "scenario": {
@@ -318,16 +302,16 @@ params = {
     },
 }
 
-# --- Ejecutar simulación automáticamente (reactivo) ---
+# --- Simulación reactiva con cache ---
 @st.cache_data(show_spinner=False)
 def run_cached_simulation(params_json: str):
-    """Ejecuta simulación con cache para evitar recálculos innecesarios."""
+    """Ejecuta simulación con cache."""
     p = json.loads(params_json)
-    avg_results, all_results = run_stochastic_simulation(p)
+    avg_results, _ = run_stochastic_simulation(p)
     kpis = calculate_kpis(avg_results, p)
     return avg_results, kpis
 
-# Validar parámetros
+# Validar
 valid = True
 if bess_min_soc >= bess_max_soc:
     valid = False
@@ -338,14 +322,13 @@ if valid:
     params_json = json.dumps(params, sort_keys=True)
     results, kpis = run_cached_simulation(params_json)
 else:
-    st.error("⚠️ Parámetros inválidos. Revise SoC min < SoC max y que los pesos sumen 1.0")
+    st.error("⚠️ Parámetros inválidos. Revise que SoC min < SoC max y que los pesos sumen 1.0")
     st.stop()
 
 # =============================================================================
-# HELPER: KPI Card HTML
+# HELPER: KPI Cards
 # =============================================================================
 def kpi_card(label: str, value: str, color_class: str = "") -> str:
-    """Genera HTML para una tarjeta KPI."""
     color = f"kpi-{color_class}" if color_class else ""
     return f"""
     <div class="kpi-card">
@@ -354,40 +337,26 @@ def kpi_card(label: str, value: str, color_class: str = "") -> str:
     </div>
     """
 
-
 def render_kpi_row(kpi_data: list):
-    """Renderiza una fila de KPIs."""
     cols = st.columns(len(kpi_data))
     for col, (label, value, color) in zip(cols, kpi_data):
         with col:
             st.markdown(kpi_card(label, value, color), unsafe_allow_html=True)
 
 # =============================================================================
-# TABS PRINCIPALES
-# =============================================================================
-tab_overview, tab_energy, tab_battery, tab_pq, tab_economics, tab_compare = st.tabs([
-    "📊 Overview",
-    "⚡ Energy Balance",
-    "🔋 Battery",
-    "📈 Power Quality",
-    "💰 Economics",
-    "🔄 Scenarios"
-])
-
-# =============================================================================
 # TAB: OVERVIEW
 # =============================================================================
 with tab_overview:
-    st.markdown(f'<div class="section-header">Escenario: {scenario_name}</div>',
+    st.markdown(f'<div class="section-header">Resumen: {scenario_name}</div>',
                 unsafe_allow_html=True)
 
-    # Fila 1 - KPIs principales
     ren_color = "good" if kpis["renewable_pct"] > 0.7 else ("warn" if kpis["renewable_pct"] > 0.4 else "bad")
     thd_color = "good" if kpis["thd_max_pct"] <= thd_limit else "bad"
     perf_color = "good" if kpis["performance_index"] > 65 else ("warn" if kpis["performance_index"] > 40 else "bad")
+    soc_color = "good" if kpis["soc_min"] > 0.3 else ("warn" if kpis["soc_min"] > 0.2 else "bad")
 
     render_kpi_row([
-        ("Índice Global", f"{kpis['performance_index']:.1f}", perf_color),
+        ("Índice Global", f"{kpis['performance_index']:.1f}/100", perf_color),
         ("% Renovable", f"{kpis['renewable_pct']*100:.1f}%", ren_color),
         ("Costo Diario", f"${kpis['daily_cost_usd']:.2f}", ""),
         ("Emisiones CO₂", f"{kpis['total_emissions_kg']:.1f} kg", ""),
@@ -396,8 +365,6 @@ with tab_overview:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Fila 2
-    soc_color = "good" if kpis["soc_min"] > 0.3 else ("warn" if kpis["soc_min"] > 0.2 else "bad")
     render_kpi_row([
         ("E. Comprada", f"{kpis['energy_bought_kwh']:.0f} kWh", ""),
         ("E. Vendida", f"{kpis['energy_sold_kwh']:.0f} kWh", ""),
@@ -408,7 +375,6 @@ with tab_overview:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Radar + Generación vs Demanda
     col_left, col_right = st.columns([1, 1])
     with col_left:
         fig_radar = plot_radar_performance(kpis, params)
@@ -446,23 +412,7 @@ with tab_energy:
             "bess_charge_kw", "bess_discharge_kw", "grid_buy_kw", "grid_sell_kw",
             "curtailment_kw", "emissions_total_kg", "net_cost_usd"
         ]
-        st.dataframe(
-            results[display_cols].round(2),
-            use_container_width=True, height=350,
-            column_config={
-                "hour": st.column_config.NumberColumn("Hora"),
-                "pv_generation_kw": st.column_config.NumberColumn("PV (kW)", format="%.1f"),
-                "wind_generation_kw": st.column_config.NumberColumn("Eólica (kW)", format="%.1f"),
-                "total_demand_kw": st.column_config.NumberColumn("Demanda (kW)", format="%.1f"),
-                "bess_charge_kw": st.column_config.NumberColumn("BESS+ (kW)", format="%.1f"),
-                "bess_discharge_kw": st.column_config.NumberColumn("BESS- (kW)", format="%.1f"),
-                "grid_buy_kw": st.column_config.NumberColumn("Compra (kW)", format="%.1f"),
-                "grid_sell_kw": st.column_config.NumberColumn("Venta (kW)", format="%.1f"),
-                "curtailment_kw": st.column_config.NumberColumn("Curtail (kW)", format="%.1f"),
-                "emissions_total_kg": st.column_config.NumberColumn("CO₂ (kg)", format="%.2f"),
-                "net_cost_usd": st.column_config.NumberColumn("Costo ($)", format="%.2f"),
-            }
-        )
+        st.dataframe(results[display_cols].round(2), use_container_width=True, height=350)
 
 # =============================================================================
 # TAB: BATTERY
@@ -475,7 +425,7 @@ with tab_battery:
         ("Capacidad", f"{bess_capacity} kWh", ""),
         ("SoC Mínimo", f"{kpis['soc_min']*100:.1f}%", soc_color),
         ("SoH Final", f"{kpis['soh_final']*100:.3f}%", "good"),
-        ("Degradación", f"{(bess_initial_soh - kpis['soh_final'])*100:.4f}%", ""),
+        ("Degradación Diaria", f"{(bess_initial_soh - kpis['soh_final'])*100:.4f}%", ""),
     ])
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -545,7 +495,6 @@ with tab_economics:
         fig_em.update_layout(height=380, margin=dict(t=50, b=40))
         st.plotly_chart(fig_em, use_container_width=True)
 
-    # Desglose de costos
     with st.expander("📖 Desglose Económico"):
         st.markdown(f"""
         | Concepto | Valor |
@@ -554,10 +503,8 @@ with tab_economics:
         | → Solar PV ({pv_capacity} kW × ${pv_cost}/kW) | ${pv_capacity * pv_cost:,.0f} |
         | → Eólica ({wind_capacity} kW × ${wind_cost}/kW) | ${wind_capacity * wind_cost:,.0f} |
         | → BESS ({bess_capacity} kWh × ${bess_cost}/kWh) | ${bess_capacity * bess_cost:,.0f} |
-        | Costo Anual Equivalente (CRF {discount_rate*100:.0f}%, {project_lifetime} años) | ${kpis['annual_equivalent_cost_usd']:,.0f}/año |
-        | Costo Operativo Diario (compra - venta) | ${kpis['daily_cost_usd']:.2f}/día |
-        | Energía comprada ({kpis['energy_bought_kwh']:.0f} kWh × ${buy_price}/kWh) | ${kpis['energy_bought_kwh'] * buy_price:.2f} |
-        | Ingreso venta ({kpis['energy_sold_kwh']:.0f} kWh × ${sell_price}/kWh) | ${kpis['energy_sold_kwh'] * sell_price:.2f} |
+        | CAE (CRF {discount_rate*100:.0f}%, {project_lifetime} años) | ${kpis['annual_equivalent_cost_usd']:,.0f}/año |
+        | Costo Op. Diario (compra − venta) | ${kpis['daily_cost_usd']:.2f}/día |
         """)
 
 # =============================================================================
@@ -567,14 +514,14 @@ with tab_compare:
     st.markdown('<div class="section-header">Comparación de Escenarios</div>',
                 unsafe_allow_html=True)
 
-    col_save, col_clear, col_spacer = st.columns([1, 1, 2])
+    col_save, col_clear, _ = st.columns([1, 1, 2])
     with col_save:
         if st.button("💾 Guardar Escenario", type="primary", use_container_width=True):
             st.session_state.saved_scenarios = save_scenario(
                 scenario_name, kpis, params,
                 st.session_state.saved_scenarios
             )
-            st.toast(f"✅ '{scenario_name}' guardado", icon="💾")
+            st.toast(f"'{scenario_name}' guardado", icon="✅")
     with col_clear:
         if st.button("🗑️ Limpiar Todo", use_container_width=True):
             st.session_state.saved_scenarios = []
@@ -583,15 +530,11 @@ with tab_compare:
     if st.session_state.saved_scenarios:
         st.markdown("<br>", unsafe_allow_html=True)
         comparison_df = get_comparison_table(st.session_state.saved_scenarios)
-
         st.dataframe(
             comparison_df,
             use_container_width=True,
             height=min(400, 60 + len(st.session_state.saved_scenarios) * 40),
             column_config={
-                "% Renovable": st.column_config.NumberColumn(format="%.3f"),
-                "SoC Mín": st.column_config.NumberColumn(format="%.3f"),
-                "SoH Final": st.column_config.NumberColumn(format="%.4f"),
                 "Índice Global": st.column_config.ProgressColumn(
                     min_value=0, max_value=100, format="%.1f"
                 ),
@@ -599,38 +542,32 @@ with tab_compare:
         )
 
         st.markdown("<br>", unsafe_allow_html=True)
-
         col_dl1, col_dl2 = st.columns(2)
         with col_dl1:
             st.download_button(
                 "📥 Comparación CSV",
                 export_scenarios_csv(st.session_state.saved_scenarios),
                 file_name="scenario_comparison.csv",
-                mime="text/csv",
-                use_container_width=True
+                mime="text/csv", use_container_width=True
             )
         with col_dl2:
             st.download_button(
                 "📥 Resultados Horarios CSV",
                 export_results_csv(results),
                 file_name="hourly_results.csv",
-                mime="text/csv",
-                use_container_width=True
+                mime="text/csv", use_container_width=True
             )
     else:
         st.info(
-            "Modifique parámetros en la barra lateral, nombre el escenario y "
-            "presione **Guardar Escenario** para comenzar a comparar."
+            "Modifique parámetros en la pestaña **⚙️ Parámetros**, nombre el escenario y "
+            "presione **Guardar Escenario** para comparar configuraciones."
         )
 
 # =============================================================================
 # FOOTER
 # =============================================================================
-st.markdown("---")
-st.markdown(
-    '<p style="text-align:center; color:#64748b; font-size:0.8rem;">'
-    'Microgrid Scenario Simulator v2.0 · Modelo simplificado para análisis What-If · '
-    'Generación renovable · BESS · EVs · Optimización multi-objetivo'
-    '</p>',
-    unsafe_allow_html=True
+st.divider()
+st.caption(
+    "Microgrid Scenario Simulator v3.0 · Modelo simplificado para análisis What-If · "
+    "Generación renovable · BESS · EVs · Optimización multi-objetivo"
 )
