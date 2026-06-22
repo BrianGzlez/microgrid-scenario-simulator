@@ -189,30 +189,40 @@ def plot_soc(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
 
 def plot_grid_exchange(results: pd.DataFrame) -> go.Figure:
     """
-    Gráfica de compra y venta de energía con la red principal.
+    Gráfica de intercambio con la red como área continua (más legible).
     """
     fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
+
+    fig.add_trace(go.Scatter(
         x=results["hour"], y=results["grid_buy_kw"],
-        name="Compra de Red", marker_color=COLORS["grid_buy"]
+        name="Compra de red",
+        line=dict(color=COLORS["grid_buy"], width=2),
+        fill="tozeroy",
+        fillcolor="rgba(161, 136, 127, 0.3)",
+        mode="lines",
+        hovertemplate="Hora %{x}<br>Compra: %{y:.1f} kW<extra></extra>",
     ))
-    
-    fig.add_trace(go.Bar(
+
+    fig.add_trace(go.Scatter(
         x=results["hour"], y=-results["grid_sell_kw"],
-        name="Venta a Red", marker_color=COLORS["grid_sell"]
+        name="Venta a red",
+        line=dict(color=COLORS["grid_sell"], width=2),
+        fill="tozeroy",
+        fillcolor="rgba(34, 211, 238, 0.3)",
+        mode="lines",
+        hovertemplate="Hora %{x}<br>Venta: %{y:.1f} kW<extra></extra>",
     ))
-    
-    fig.add_hline(y=0, line_color="black", line_width=1)
-    
+
+    fig.add_hline(y=0, line_color="#94a3b8", line_width=1, line_dash="dot")
+
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Intercambio de Energía con la Red Principal",
+        title="Intercambio con la Red Principal",
         xaxis_title="Hora del día",
-        yaxis_title="Potencia (kW) [+ compra / - venta]",
+        yaxis_title="Potencia (kW)",
         height=400,
     )
-    
+
     return fig
 
 
@@ -521,7 +531,8 @@ def plot_frequency_deviation(results: pd.DataFrame, params: Dict[str, Any]) -> g
 
 def plot_energy_mix_donut(results: pd.DataFrame) -> go.Figure:
     """
-    Gráfica de dona mostrando la composición de la generación/suministro.
+    Gráfica de composición del suministro — barras horizontales limpias
+    mostrando la proporción de cada fuente. Más legible que una dona.
     """
     solar = results["pv_generation_kw"].sum()
     wind = results["wind_generation_kw"].sum()
@@ -530,57 +541,75 @@ def plot_energy_mix_donut(results: pd.DataFrame) -> go.Figure:
     diesel = results["diesel_generation_kw"].sum()
     gas = results["gas_generation_kw"].sum()
 
-    labels = []
+    sources = []
     values = []
     colors = []
 
-    if solar > 0:
-        labels.append("Solar PV")
-        values.append(solar)
-        colors.append(COLORS["solar"])
-    if wind > 0:
-        labels.append("Eólica")
-        values.append(wind)
-        colors.append(COLORS["wind"])
-    if bess_net > 0:
-        labels.append("BESS")
-        values.append(bess_net)
-        colors.append(COLORS["bess_discharge"])
-    if grid > 0:
-        labels.append("Red")
-        values.append(grid)
-        colors.append(COLORS["grid_buy"])
-    if diesel > 0:
-        labels.append("Diésel")
-        values.append(diesel)
-        colors.append(COLORS["diesel"])
-    if gas > 0:
-        labels.append("Gas")
-        values.append(gas)
-        colors.append(COLORS["gas"])
+    # Orden de mayor a menor
+    raw = [
+        ("Solar PV", solar, COLORS["solar"]),
+        ("Eólica", wind, COLORS["wind"]),
+        ("BESS", bess_net, COLORS["bess_discharge"]),
+        ("Red", grid, COLORS["grid_buy"]),
+        ("Diésel", diesel, COLORS["diesel"]),
+        ("Gas Natural", gas, COLORS["gas"]),
+    ]
 
-    fig = go.Figure(data=[go.Pie(
-        labels=labels,
-        values=values,
-        hole=0.55,
-        marker=dict(colors=colors, line=dict(color="#ffffff", width=2)),
-        textinfo="label+percent",
-        textfont=dict(size=11),
-        hovertemplate="%{label}: %{value:.0f} kWh (%{percent})<extra></extra>",
-    )])
+    for name, val, color in raw:
+        if val > 0:
+            sources.append(name)
+            values.append(val)
+            colors.append(color)
+
+    total = sum(values)
+    percentages = [(v / total) * 100 for v in values]
+
+    # Ordenar de mayor a menor
+    combined = sorted(zip(percentages, sources, values, colors), reverse=True)
+    percentages = [c[0] for c in combined]
+    sources = [c[1] for c in combined]
+    values = [c[2] for c in combined]
+    colors = [c[3] for c in combined]
+
+    # Invertir para que el mayor quede arriba en barras horizontales
+    sources.reverse()
+    percentages.reverse()
+    values.reverse()
+    colors.reverse()
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        y=sources,
+        x=percentages,
+        orientation="h",
+        marker=dict(
+            color=colors,
+            line=dict(color="#ffffff", width=1),
+        ),
+        text=[f"{p:.1f}% ({v:.0f} kWh)" for p, v in zip(percentages, values)],
+        textposition="auto",
+        textfont=dict(size=11, color="#1e293b"),
+        hovertemplate="%{y}: %{x:.1f}%<br>%{text}<extra></extra>",
+    ))
 
     fig.update_layout(
-        title=dict(text="Composición del Suministro", font=dict(size=14, color="#1e293b"), x=0.5),
-        showlegend=False,
-        height=350,
+        title=dict(
+            text=f"Composición del Suministro — {total:.0f} kWh total",
+            font=dict(size=14, color="#1e293b"),
+        ),
+        xaxis=dict(
+            title="Participación (%)",
+            range=[0, 100],
+            gridcolor="rgba(0,0,0,0.05)",
+        ),
+        yaxis=dict(title=""),
         paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#ffffff",
         font=dict(family="Inter, sans-serif", color="#1e293b"),
-        margin=dict(t=50, b=20, l=20, r=20),
-        annotations=[dict(
-            text=f"{sum(values):.0f}<br>kWh",
-            x=0.5, y=0.5, font_size=16, font_color="#1e293b",
-            showarrow=False
-        )]
+        height=350,
+        margin=dict(t=50, b=40, l=90, r=20),
+        showlegend=False,
     )
 
     return fig
