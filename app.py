@@ -364,33 +364,48 @@ with tab_overview:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- Fila: Radar + Dona de mix energético + Costo acumulado ---
+    # ─── Indicadores de desempeño ──────────────────────────────────────
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         fig_radar = plot_radar_performance(kpis, params)
         st.plotly_chart(fig_radar, use_container_width=True)
+        st.caption("Evaluación normalizada (0–100) en cinco dimensiones clave del sistema.")
     with col2:
         fig_donut = plot_energy_mix_donut(results)
         st.plotly_chart(fig_donut, use_container_width=True)
+        st.caption("Proporción de cada fuente en la energía total entregada durante el día.")
     with col3:
         fig_cum_cost = plot_hourly_cost_line(results)
         st.plotly_chart(fig_cum_cost, use_container_width=True)
+        st.caption("Acumulación del costo operativo neto (compra − venta) hora a hora.")
 
-    # --- Fila: Generación vs Demanda (ancho completo) ---
+    st.divider()
+
+    # ─── Balance generación / demanda ──────────────────────────────────
+    st.markdown('<div class="section-header">Generación vs Demanda</div>', unsafe_allow_html=True)
+    st.caption(
+        "Comparación horaria entre la generación renovable disponible y la demanda total. "
+        "Las áreas sombreadas muestran la contribución solar y eólica; las líneas, la demanda."
+    )
     fig_gen = plot_generation_vs_demand(results)
     fig_gen.update_layout(height=380)
     st.plotly_chart(fig_gen, use_container_width=True)
 
-    # --- Fila: SoC + Intercambio con Red ---
+    st.divider()
+
+    # ─── Almacenamiento y red ──────────────────────────────────────────
+    st.markdown('<div class="section-header">Almacenamiento e Intercambio con Red</div>', unsafe_allow_html=True)
     col_left, col_right = st.columns(2)
     with col_left:
         fig_soc = plot_soc(results, params)
         fig_soc.update_layout(height=340)
         st.plotly_chart(fig_soc, use_container_width=True)
+        st.caption("Estado de carga del BESS. Debe mantenerse dentro del rango operativo definido.")
     with col_right:
         fig_grid = plot_grid_exchange(results)
         fig_grid.update_layout(height=340)
         st.plotly_chart(fig_grid, use_container_width=True)
+        st.caption("Flujo con la red principal. Valores positivos = importación, negativos = exportación.")
 
 # =============================================================================
 # PESTAÑA: BALANCE ENERGÉTICO
