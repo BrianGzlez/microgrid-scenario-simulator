@@ -1,0 +1,75 @@
+{
+  "scenario": {
+    "name": "Base Scenario",
+    "horizon_hours": 24,
+    "time_step_hours": 1,
+    "num_nodes": 5,
+    "num_stochastic_scenarios": 3
+  },
+  "renewable": {
+    "pv_capacity_kw": 500,
+    "wind_capacity_kw": 300,
+    "solar_irradiance_factor": 0.75,
+    "wind_factor": 0.60,
+    "renewable_variability": 0.15
+  },
+  "bess": {
+    "energy_capacity_kwh": 1000,
+    "max_charge_power_kw": 250,
+    "max_discharge_power_kw": 250,
+    "initial_soc": 0.50,
+    "min_soc": 0.20,
+    "max_soc": 0.90,
+    "charge_efficiency": 0.95,
+    "discharge_efficiency": 0.95,
+    "initial_soh": 1.00
+  },
+  "demand": {
+    "base_demand_kw": 600,
+    "demand_variability": 0.20,
+    "num_evs": 40,
+    "ev_charger_power_kw": 7.4,
+    "ev_simultaneity_factor": 0.35
+  },
+  "grid": {
+    "buy_price_usd_kwh": 0.20,
+    "sell_price_usd_kwh": 0.10,
+    "max_buy_kw": 1000,
+    "max_sell_kw": 1000
+  },
+  "non_renewable": {
+    "diesel_available": false,
+    "gas_available": false,
+    "diesel_max_kw": 500,
+    "gas_max_kw": 500,
+    "diesel_emission_factor": 0.75,
+    "gasoline_emission_factor": 0.65,
+    "gas_emission_factor": 0.45,
+    "solar_emission_factor": 0.05,
+    "wind_emission_factor": 0.015
+  },
+  "power_quality": {
+    "thd_limit_pct": 5.0,
+    "thd_base_ev_pct": 3.0,
+    "ev_harmonic_content_pct": 8.0,
+    "voltage_min_pu": 0.95,
+    "voltage_max_pu": 1.05,
+    "nominal_frequency_hz": 60.0,
+    "max_frequency_deviation_hz": 0.5
+  },
+  "investment": {
+    "pv_cost_usd_kw": 900,
+    "wind_cost_usd_kw": 1300,
+    "bess_cost_usd_kwh": 400,
+    "diesel_cost_usd_kw": 500,
+    "gas_cost_usd_kw": 800,
+    "discount_rate": 0.08,
+    "project_lifetime_years": 20
+  },
+  "optimization_weights": {
+    "economic": 0.35,
+    "technical": 0.25,
+    "environmental": 0.25,
+    "renewable": 0.15
+  }
+}
