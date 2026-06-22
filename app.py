@@ -588,9 +588,3 @@ with tab_compare:
 # =============================================================================
 # PIE DE PÁGINA
 # =============================================================================
-st.divider()
-st.caption(
-    "Simulador de Escenarios de Microrred v3.1 · "
-    "Modelo simplificado para análisis What-If · "
-    "Moneda: Pesos Dominicanos (RD$)"
-)
