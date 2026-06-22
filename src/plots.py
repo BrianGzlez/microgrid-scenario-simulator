@@ -346,7 +346,7 @@ def plot_costs(results: pd.DataFrame) -> go.Figure:
         **LAYOUT_DEFAULTS,
         title="Costos Horarios de Energía",
         xaxis_title="Hora del día",
-        yaxis_title="USD [+ costo / - ingreso]",
+        yaxis_title="RD$ [+ costo / - ingreso]",
         height=400,
     )
     
@@ -380,7 +380,7 @@ def plot_radar_performance(kpis: Dict[str, float], params: Dict[str, Any]) -> go
     Radar chart del desempeño del escenario en múltiples dimensiones.
     """
     # Calcular sub-índices normalizados
-    max_cost_ref = 500.0
+    max_cost_ref = 90000.0
     idx_economic = max(0, min(100, 100 * (1 - kpis["daily_cost_usd"] / max_cost_ref)))
     
     pq = params["power_quality"]

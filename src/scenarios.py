@@ -63,10 +63,10 @@ def get_comparison_table(saved_scenarios: List[Dict]) -> pd.DataFrame:
     # Renombrar columnas para presentación
     column_names = {
         "name": "Escenario",
-        "daily_cost_usd": "Costo Diario (USD)",
-        "total_daily_cost_usd": "Costo Total Diario (USD)",
-        "annual_equivalent_cost_usd": "CAE (USD/año)",
-        "capex_usd": "CAPEX (USD)",
+        "daily_cost_usd": "Costo Diario (RD$)",
+        "total_daily_cost_usd": "Costo Total Diario (RD$)",
+        "annual_equivalent_cost_usd": "CAE (RD$/año)",
+        "capex_usd": "CAPEX (RD$)",
         "energy_bought_kwh": "E. Comprada (kWh)",
         "energy_sold_kwh": "E. Vendida (kWh)",
         "renewable_pct": "% Renovable",

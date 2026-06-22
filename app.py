@@ -1,7 +1,7 @@
 """
-Microgrid Scenario Simulator v3.0
-Dashboard profesional con fondo blanco. Los parámetros van en su propia pestaña.
-La simulación se ejecuta automáticamente.
+Simulador de Escenarios de Microrred v3.0
+Dashboard profesional · Fondo blanco · Todo en español · Moneda: Pesos Dominicanos (RD$)
+La simulación se ejecuta automáticamente al modificar parámetros.
 """
 
 import streamlit as st
@@ -25,18 +25,17 @@ from src.plots import (
 
 # --- Configuración de página ---
 st.set_page_config(
-    page_title="Microgrid Scenario Simulator",
+    page_title="Simulador de Microrred",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # =============================================================================
-# CSS - Fondo blanco, limpio, profesional
+# CSS
 # =============================================================================
 st.markdown("""
 <style>
-    /* KPI card styling */
     .kpi-card {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
@@ -65,8 +64,6 @@ st.markdown("""
     .kpi-good { color: #16a34a; }
     .kpi-warn { color: #d97706; }
     .kpi-bad { color: #dc2626; }
-
-    /* Section headers */
     .section-header {
         color: #1e293b;
         font-size: 1.2rem;
@@ -75,69 +72,51 @@ st.markdown("""
         border-bottom: 2px solid #2563eb;
         margin: 1rem 0 1rem 0;
     }
-
-    /* Hide default branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-
-    /* Parameter section styling */
-    .param-section {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 0.8rem;
-    }
-    .param-title {
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 0.95rem;
-        margin-bottom: 0.5rem;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # =============================================================================
-# HEADER
+# ENCABEZADO
 # =============================================================================
-st.markdown("# ⚡ Microgrid Scenario Simulator")
+st.markdown("# ⚡ Simulador de Escenarios de Microrred")
 st.markdown(
-    "Simulador What-If para microrredes multinodales · Generación renovable · "
-    "BESS · EVs · Calidad de energía · Optimización multi-objetivo"
+    "Análisis What-If para microrredes multinodales · Generación renovable · "
+    "BESS · Vehículos eléctricos · Calidad de energía · Optimización multi-objetivo"
 )
 st.divider()
 
-# --- Session state ---
+# --- Estado de sesión ---
 if "saved_scenarios" not in st.session_state:
     st.session_state.saved_scenarios = []
 
 # =============================================================================
-# TABS PRINCIPALES - Parámetros es una pestaña más
+# PESTAÑAS PRINCIPALES
 # =============================================================================
 tab_params, tab_overview, tab_energy, tab_battery, tab_pq, tab_economics, tab_compare = st.tabs([
     "⚙️ Parámetros",
-    "📊 Overview",
-    "⚡ Energy Balance",
-    "🔋 Battery",
-    "📈 Power Quality",
-    "💰 Economics",
-    "🔄 Scenarios"
+    "📊 Resumen",
+    "⚡ Balance Energético",
+    "🔋 Batería",
+    "📈 Calidad de Energía",
+    "💰 Economía",
+    "🔄 Comparar Escenarios"
 ])
 
 # =============================================================================
-# TAB: PARÁMETROS
+# PESTAÑA: PARÁMETROS
 # =============================================================================
 with tab_params:
     st.markdown('<div class="section-header">Configuración del Escenario</div>',
                 unsafe_allow_html=True)
-    st.caption("Modifique los parámetros y los resultados se actualizarán automáticamente en las demás pestañas.")
+    st.caption("Los resultados se actualizan automáticamente al modificar cualquier valor.")
 
-    # --- Fila 1: General + Renovable + BESS ---
     col_a, col_b, col_c = st.columns(3)
 
     with col_a:
         st.markdown("##### 📋 Escenario General")
-        scenario_name = st.text_input("Nombre del escenario", value="Base Scenario")
+        scenario_name = st.text_input("Nombre del escenario", value="Escenario Base")
         horizon_hours = 24
         num_nodes = st.slider("Número de nodos", 1, 20, 5)
         num_stochastic = st.slider("Escenarios estocásticos", 1, 10, 3)
@@ -145,83 +124,82 @@ with tab_params:
         st.markdown("##### ☀️ Generación Renovable")
         pv_capacity = st.slider("Solar PV (kW)", 0, 2000, 500, 50)
         wind_capacity = st.slider("Eólica (kW)", 0, 2000, 300, 50)
-        solar_factor = st.slider("Factor irradiancia", 0.0, 1.0, 0.75, 0.05)
-        wind_factor = st.slider("Factor viento", 0.0, 1.0, 0.60, 0.05)
+        solar_factor = st.slider("Factor de irradiancia", 0.0, 1.0, 0.75, 0.05)
+        wind_factor = st.slider("Factor de viento", 0.0, 1.0, 0.60, 0.05)
         renewable_variability = st.slider("Variabilidad renovable", 0.0, 0.50, 0.15, 0.05)
 
     with col_b:
         st.markdown("##### 🔋 Batería BESS")
         bess_capacity = st.slider("Capacidad (kWh)", 0, 5000, 1000, 100)
-        bess_max_charge = st.slider("Carga máx (kW)", 0, 2000, 250, 50)
-        bess_max_discharge = st.slider("Descarga máx (kW)", 0, 2000, 250, 50)
+        bess_max_charge = st.slider("Potencia máx. carga (kW)", 0, 2000, 250, 50)
+        bess_max_discharge = st.slider("Potencia máx. descarga (kW)", 0, 2000, 250, 50)
         bess_initial_soc = st.slider("SoC inicial (%)", 0, 100, 50) / 100.0
         bess_min_soc = st.slider("SoC mínimo (%)", 0, 50, 20) / 100.0
         bess_max_soc = st.slider("SoC máximo (%)", 50, 100, 90) / 100.0
-        bess_charge_eff = st.slider("η carga (%)", 80, 100, 95) / 100.0
-        bess_discharge_eff = st.slider("η descarga (%)", 80, 100, 95) / 100.0
+        bess_charge_eff = st.slider("Eficiencia de carga (%)", 80, 100, 95) / 100.0
+        bess_discharge_eff = st.slider("Eficiencia de descarga (%)", 80, 100, 95) / 100.0
         bess_initial_soh = st.slider("SoH inicial (%)", 50, 100, 100) / 100.0
 
     with col_c:
-        st.markdown("##### 🚗 Demanda y EVs")
+        st.markdown("##### 🚗 Demanda y Vehículos Eléctricos")
         base_demand = st.slider("Demanda base (kW)", 100, 2000, 600, 50)
-        demand_variability = st.slider("Variabilidad demanda (%)", 0, 50, 20) / 100.0
+        demand_variability = st.slider("Variabilidad de demanda (%)", 0, 50, 20) / 100.0
         num_evs = st.slider("Número de EVs", 0, 200, 40, 5)
-        ev_charger_power = st.number_input("Potencia cargador (kW)", value=7.4, step=0.1)
-        ev_simultaneity = st.slider("Simultaneidad EV", 0.0, 1.0, 0.35, 0.05)
+        ev_charger_power = st.number_input("Potencia por cargador (kW)", value=7.4, step=0.1)
+        ev_simultaneity = st.slider("Factor de simultaneidad EV", 0.0, 1.0, 0.35, 0.05)
 
         st.markdown("##### 🔌 Red Principal")
-        buy_price = st.number_input("Precio compra (USD/kWh)", value=0.20, step=0.01, format="%.3f")
-        sell_price = st.number_input("Precio venta (USD/kWh)", value=0.10, step=0.01, format="%.3f")
-        max_buy = st.slider("Máx compra (kW)", 0, 3000, 1000, 100)
-        max_sell = st.slider("Máx venta (kW)", 0, 3000, 1000, 100)
+        buy_price = st.number_input("Precio compra (RD$/kWh)", value=12.0, step=0.5, format="%.2f")
+        sell_price = st.number_input("Precio venta (RD$/kWh)", value=6.0, step=0.5, format="%.2f")
+        max_buy = st.slider("Máx. compra de red (kW)", 0, 3000, 1000, 100)
+        max_sell = st.slider("Máx. venta a red (kW)", 0, 3000, 1000, 100)
 
     st.divider()
 
-    # --- Fila 2: No Renovables + Calidad + Costos + Pesos ---
     col_d, col_e, col_f = st.columns(3)
 
     with col_d:
-        st.markdown("##### 🏭 No Renovables")
+        st.markdown("##### 🏭 Generación No Renovable")
         diesel_available = st.checkbox("Diésel disponible", False)
         gas_available = st.checkbox("Gas natural disponible", False)
-        diesel_max = st.slider("Máx diésel (kW)", 0, 2000, 500, 50)
-        gas_max = st.slider("Máx gas (kW)", 0, 2000, 500, 50)
-        diesel_ef = st.number_input("Emisión diésel (kg/kWh)", value=0.75, step=0.05)
-        gasoline_ef = st.number_input("Emisión gasolina (kg/kWh)", value=0.65, step=0.05)
-        gas_ef = st.number_input("Emisión gas (kg/kWh)", value=0.45, step=0.05)
-        solar_ef = st.number_input("Emisión solar (kg/kWh)", value=0.05, step=0.005, format="%.3f")
-        wind_ef = st.number_input("Emisión eólica (kg/kWh)", value=0.015, step=0.005, format="%.3f")
+        diesel_max = st.slider("Potencia máx. diésel (kW)", 0, 2000, 500, 50)
+        gas_max = st.slider("Potencia máx. gas (kW)", 0, 2000, 500, 50)
+        diesel_ef = st.number_input("Factor emisión diésel (kg CO₂/kWh)", value=0.75, step=0.05)
+        gasoline_ef = st.number_input("Factor emisión gasolina (kg CO₂/kWh)", value=0.65, step=0.05)
+        gas_ef = st.number_input("Factor emisión gas (kg CO₂/kWh)", value=0.45, step=0.05)
+        solar_ef = st.number_input("Factor emisión solar (kg CO₂/kWh)", value=0.05, step=0.005, format="%.3f")
+        wind_ef = st.number_input("Factor emisión eólica (kg CO₂/kWh)", value=0.015, step=0.005, format="%.3f")
 
     with col_e:
         st.markdown("##### 📊 Calidad de Energía")
-        thd_limit = st.number_input("THD límite (%)", value=5.0, step=0.5)
+        thd_limit = st.number_input("THD límite máximo (%)", value=5.0, step=0.5)
         thd_base_ev = st.number_input("THD base EV (%)", value=3.0, step=0.5)
-        ev_harmonic = st.number_input("Armónico EV (%)", value=8.0, step=0.5)
-        v_min = st.number_input("V mínimo (p.u.)", value=0.95, step=0.01, format="%.3f")
-        v_max = st.number_input("V máximo (p.u.)", value=1.05, step=0.01, format="%.3f")
-        freq_nominal = st.number_input("Frecuencia (Hz)", value=60.0, step=1.0)
-        freq_max_dev = st.number_input("Δf máx (Hz)", value=0.5, step=0.1)
+        ev_harmonic = st.number_input("Contenido armónico EV (%)", value=8.0, step=0.5)
+        v_min = st.number_input("Voltaje mínimo (p.u.)", value=0.95, step=0.01, format="%.3f")
+        v_max = st.number_input("Voltaje máximo (p.u.)", value=1.05, step=0.01, format="%.3f")
+        freq_nominal = st.number_input("Frecuencia nominal (Hz)", value=60.0, step=1.0)
+        freq_max_dev = st.number_input("Desviación máx. de frecuencia (Hz)", value=0.5, step=0.1)
 
-        st.markdown("##### ⚖️ Pesos Optimización")
-        w_economic = st.slider("Económico", 0.0, 1.0, 0.35, 0.05)
-        w_technical = st.slider("Técnico", 0.0, 1.0, 0.25, 0.05)
-        w_environmental = st.slider("Ambiental", 0.0, 1.0, 0.25, 0.05)
-        w_renewable = st.slider("Renovable", 0.0, 1.0, 0.15, 0.05)
+        st.markdown("##### ⚖️ Pesos de Optimización")
+        w_economic = st.slider("Peso económico", 0.0, 1.0, 0.35, 0.05)
+        w_technical = st.slider("Peso técnico", 0.0, 1.0, 0.25, 0.05)
+        w_environmental = st.slider("Peso ambiental", 0.0, 1.0, 0.25, 0.05)
+        w_renewable = st.slider("Peso renovable", 0.0, 1.0, 0.15, 0.05)
         total_w = w_economic + w_technical + w_environmental + w_renewable
         if abs(total_w - 1.0) > 0.01:
-            st.warning(f"⚠️ Suma: {total_w:.2f} (debe ser 1.0)")
+            st.warning(f"⚠️ Suma actual: {total_w:.2f} (debe ser 1.0)")
         else:
             st.success(f"✓ Pesos suman {total_w:.2f}")
 
     with col_f:
-        st.markdown("##### 💰 Costos de Inversión")
-        pv_cost = st.number_input("Costo PV (USD/kW)", value=900, step=50)
-        wind_cost = st.number_input("Costo eólico (USD/kW)", value=1300, step=50)
-        bess_cost = st.number_input("Costo BESS (USD/kWh)", value=400, step=50)
-        diesel_cost = st.number_input("Costo diésel (USD/kW)", value=500, step=50)
-        gas_cost = st.number_input("Costo gas (USD/kW)", value=800, step=50)
-        discount_rate = st.slider("Tasa descuento (%)", 1, 20, 8) / 100.0
-        project_lifetime = st.slider("Vida útil (años)", 5, 40, 20)
+        st.markdown("##### 💰 Costos de Inversión (RD$)")
+        pv_cost = st.number_input("Costo PV (RD$/kW)", value=54000, step=1000)
+        wind_cost = st.number_input("Costo eólico (RD$/kW)", value=78000, step=1000)
+        bess_cost = st.number_input("Costo BESS (RD$/kWh)", value=24000, step=1000)
+        diesel_cost = st.number_input("Costo diésel (RD$/kW)", value=30000, step=1000)
+        gas_cost = st.number_input("Costo gas natural (RD$/kW)", value=48000, step=1000)
+        discount_rate = st.slider("Tasa de descuento (%)", 1, 20, 8) / 100.0
+        project_lifetime = st.slider("Vida útil del proyecto (años)", 5, 40, 20)
 
 # =============================================================================
 # CONSTRUIR PARÁMETROS Y EJECUTAR SIMULACIÓN
@@ -305,7 +283,6 @@ params = {
 # --- Simulación reactiva con cache ---
 @st.cache_data(show_spinner=False)
 def run_cached_simulation(params_json: str):
-    """Ejecuta simulación con cache."""
     p = json.loads(params_json)
     avg_results, _ = run_stochastic_simulation(p)
     kpis = calculate_kpis(avg_results, p)
@@ -322,11 +299,11 @@ if valid:
     params_json = json.dumps(params, sort_keys=True)
     results, kpis = run_cached_simulation(params_json)
 else:
-    st.error("⚠️ Parámetros inválidos. Revise que SoC min < SoC max y que los pesos sumen 1.0")
+    st.error("⚠️ Parámetros inválidos. Verifique que SoC mín < SoC máx y que los pesos sumen 1.0")
     st.stop()
 
 # =============================================================================
-# HELPER: KPI Cards
+# HELPER: Tarjetas KPI
 # =============================================================================
 def kpi_card(label: str, value: str, color_class: str = "") -> str:
     color = f"kpi-{color_class}" if color_class else ""
@@ -344,10 +321,10 @@ def render_kpi_row(kpi_data: list):
             st.markdown(kpi_card(label, value, color), unsafe_allow_html=True)
 
 # =============================================================================
-# TAB: OVERVIEW
+# PESTAÑA: RESUMEN
 # =============================================================================
 with tab_overview:
-    st.markdown(f'<div class="section-header">Resumen: {scenario_name}</div>',
+    st.markdown(f'<div class="section-header">Resumen del Escenario: {scenario_name}</div>',
                 unsafe_allow_html=True)
 
     ren_color = "good" if kpis["renewable_pct"] > 0.7 else ("warn" if kpis["renewable_pct"] > 0.4 else "bad")
@@ -358,7 +335,7 @@ with tab_overview:
     render_kpi_row([
         ("Índice Global", f"{kpis['performance_index']:.1f}/100", perf_color),
         ("% Renovable", f"{kpis['renewable_pct']*100:.1f}%", ren_color),
-        ("Costo Diario", f"${kpis['daily_cost_usd']:.2f}", ""),
+        ("Costo Diario", f"RD${kpis['daily_cost_usd']:,.2f}", ""),
         ("Emisiones CO₂", f"{kpis['total_emissions_kg']:.1f} kg", ""),
         ("THD Máximo", f"{kpis['thd_max_pct']:.2f}%", thd_color),
     ])
@@ -386,7 +363,7 @@ with tab_overview:
         st.plotly_chart(fig_gen, use_container_width=True)
 
 # =============================================================================
-# TAB: ENERGY BALANCE
+# PESTAÑA: BALANCE ENERGÉTICO
 # =============================================================================
 with tab_energy:
     st.markdown('<div class="section-header">Balance Energético Horario</div>',
@@ -415,7 +392,7 @@ with tab_energy:
         st.dataframe(results[display_cols].round(2), use_container_width=True, height=350)
 
 # =============================================================================
-# TAB: BATTERY
+# PESTAÑA: BATERÍA
 # =============================================================================
 with tab_battery:
     st.markdown('<div class="section-header">Sistema de Almacenamiento BESS</div>',
@@ -439,7 +416,7 @@ with tab_battery:
     st.plotly_chart(fig_bess, use_container_width=True)
 
 # =============================================================================
-# TAB: POWER QUALITY
+# PESTAÑA: CALIDAD DE ENERGÍA
 # =============================================================================
 with tab_pq:
     st.markdown('<div class="section-header">Calidad de Energía</div>',
@@ -470,17 +447,17 @@ with tab_pq:
     st.plotly_chart(fig_freq, use_container_width=True)
 
 # =============================================================================
-# TAB: ECONOMICS
+# PESTAÑA: ECONOMÍA
 # =============================================================================
 with tab_economics:
     st.markdown('<div class="section-header">Análisis Económico</div>',
                 unsafe_allow_html=True)
 
     render_kpi_row([
-        ("CAPEX", f"${kpis['capex_usd']:,.0f}", ""),
-        ("CAE", f"${kpis['annual_equivalent_cost_usd']:,.0f}/año", ""),
-        ("Costo Op. Diario", f"${kpis['daily_cost_usd']:.2f}", ""),
-        ("Costo Total Diario", f"${kpis['total_daily_cost_usd']:.2f}", ""),
+        ("CAPEX", f"RD${kpis['capex_usd']:,.0f}", ""),
+        ("CAE", f"RD${kpis['annual_equivalent_cost_usd']:,.0f}/año", ""),
+        ("Costo Op. Diario", f"RD${kpis['daily_cost_usd']:,.2f}", ""),
+        ("Costo Total Diario", f"RD${kpis['total_daily_cost_usd']:,.2f}", ""),
     ])
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -499,16 +476,16 @@ with tab_economics:
         st.markdown(f"""
         | Concepto | Valor |
         |----------|-------|
-        | CAPEX Total | ${kpis['capex_usd']:,.0f} |
-        | → Solar PV ({pv_capacity} kW × ${pv_cost}/kW) | ${pv_capacity * pv_cost:,.0f} |
-        | → Eólica ({wind_capacity} kW × ${wind_cost}/kW) | ${wind_capacity * wind_cost:,.0f} |
-        | → BESS ({bess_capacity} kWh × ${bess_cost}/kWh) | ${bess_capacity * bess_cost:,.0f} |
-        | CAE (CRF {discount_rate*100:.0f}%, {project_lifetime} años) | ${kpis['annual_equivalent_cost_usd']:,.0f}/año |
-        | Costo Op. Diario (compra − venta) | ${kpis['daily_cost_usd']:.2f}/día |
+        | CAPEX Total | RD${kpis['capex_usd']:,.0f} |
+        | → Solar PV ({pv_capacity} kW × RD${pv_cost:,}/kW) | RD${pv_capacity * pv_cost:,.0f} |
+        | → Eólica ({wind_capacity} kW × RD${wind_cost:,}/kW) | RD${wind_capacity * wind_cost:,.0f} |
+        | → BESS ({bess_capacity} kWh × RD${bess_cost:,}/kWh) | RD${bess_capacity * bess_cost:,.0f} |
+        | CAE (tasa {discount_rate*100:.0f}%, {project_lifetime} años) | RD${kpis['annual_equivalent_cost_usd']:,.0f}/año |
+        | Costo Op. Diario (compra − venta) | RD${kpis['daily_cost_usd']:,.2f}/día |
         """)
 
 # =============================================================================
-# TAB: SCENARIO COMPARISON
+# PESTAÑA: COMPARAR ESCENARIOS
 # =============================================================================
 with tab_compare:
     st.markdown('<div class="section-header">Comparación de Escenarios</div>',
@@ -545,29 +522,29 @@ with tab_compare:
         col_dl1, col_dl2 = st.columns(2)
         with col_dl1:
             st.download_button(
-                "📥 Comparación CSV",
+                "📥 Descargar Comparación (CSV)",
                 export_scenarios_csv(st.session_state.saved_scenarios),
-                file_name="scenario_comparison.csv",
+                file_name="comparacion_escenarios.csv",
                 mime="text/csv", use_container_width=True
             )
         with col_dl2:
             st.download_button(
-                "📥 Resultados Horarios CSV",
+                "📥 Descargar Resultados Horarios (CSV)",
                 export_results_csv(results),
-                file_name="hourly_results.csv",
+                file_name="resultados_horarios.csv",
                 mime="text/csv", use_container_width=True
             )
     else:
         st.info(
             "Modifique parámetros en la pestaña **⚙️ Parámetros**, nombre el escenario y "
-            "presione **Guardar Escenario** para comparar configuraciones."
+            "presione **Guardar Escenario** para comenzar a comparar configuraciones."
         )
 
 # =============================================================================
-# FOOTER
+# PIE DE PÁGINA
 # =============================================================================
 st.divider()
 st.caption(
-    "Microgrid Scenario Simulator v3.0 · Modelo simplificado para análisis What-If · "
-    "Generación renovable · BESS · EVs · Optimización multi-objetivo"
+    "Simulador de Escenarios de Microrred v3.0 · Modelo simplificado para análisis What-If · "
+    "Moneda: Pesos Dominicanos (RD$) · Generación renovable · BESS · EVs · Optimización multi-objetivo"
 )

@@ -135,8 +135,8 @@ def _calculate_performance_index(daily_cost: float, total_emissions: float,
     """
     weights = params["optimization_weights"]
     
-    # Índice económico: menor costo mejor (referencia: $1500/día como peor caso)
-    max_cost_ref = 1500.0
+    # Índice económico: menor costo mejor (referencia: 90000 RD$/día como peor caso)
+    max_cost_ref = 90000.0
     idx_economic = max(0, min(100, 100 * (1 - daily_cost / max_cost_ref)))
     
     # Índice técnico: combinación de THD y SoC
