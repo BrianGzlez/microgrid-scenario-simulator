@@ -10,6 +10,5 @@ venv/
 dist/
 build/
 .eggs/
-.streamlit/
 .DS_Store
 *.log

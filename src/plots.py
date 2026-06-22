@@ -13,22 +13,39 @@ from typing import Dict, Any
 
 # Paleta de colores profesional
 COLORS = {
-    "solar": "#FFC107",
-    "wind": "#4CAF50",
-    "demand": "#F44336",
-    "ev_demand": "#9C27B0",
-    "bess_charge": "#2196F3",
-    "bess_discharge": "#FF9800",
-    "grid_buy": "#795548",
-    "grid_sell": "#00BCD4",
-    "curtailment": "#607D8B",
-    "diesel": "#424242",
-    "gas": "#8D6E63",
-    "soc": "#3F51B5",
-    "thd": "#E91E63",
-    "voltage": "#009688",
-    "emissions": "#FF5722",
+    "solar": "#FBBF24",
+    "wind": "#34D399",
+    "demand": "#F87171",
+    "ev_demand": "#A78BFA",
+    "bess_charge": "#60A5FA",
+    "bess_discharge": "#FB923C",
+    "grid_buy": "#A1887F",
+    "grid_sell": "#22D3EE",
+    "curtailment": "#94A3B8",
+    "diesel": "#9CA3AF",
+    "gas": "#D4A574",
+    "soc": "#818CF8",
+    "thd": "#F472B6",
+    "voltage": "#2DD4BF",
+    "emissions": "#FB7185",
 }
+
+# Layout base para todas las gráficas (dark theme)
+LAYOUT_DEFAULTS = dict(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(15,23,42,0.6)",
+    font=dict(family="Inter, sans-serif", color="#e2e8f0"),
+    legend=dict(
+        orientation="h",
+        yanchor="bottom", y=1.02,
+        xanchor="right", x=1,
+        bgcolor="rgba(0,0,0,0)",
+        font=dict(size=11)
+    ),
+    margin=dict(l=50, r=20, t=50, b=40),
+    hovermode="x unified",
+)
 
 
 def plot_generation_vs_demand(results: pd.DataFrame) -> go.Figure:
@@ -42,14 +59,14 @@ def plot_generation_vs_demand(results: pd.DataFrame) -> go.Figure:
         x=results["hour"], y=results["pv_generation_kw"],
         name="Solar PV", fill="tozeroy",
         line=dict(color=COLORS["solar"], width=0),
-        fillcolor="rgba(255, 193, 7, 0.4)"
+        fillcolor="rgba(251, 191, 36, 0.35)"
     ))
     
     fig.add_trace(go.Scatter(
         x=results["hour"], y=results["pv_generation_kw"] + results["wind_generation_kw"],
         name="Eólica (acumulada)", fill="tonexty",
         line=dict(color=COLORS["wind"], width=0),
-        fillcolor="rgba(76, 175, 80, 0.4)"
+        fillcolor="rgba(52, 211, 153, 0.35)"
     ))
     
     fig.add_trace(go.Scatter(
@@ -68,12 +85,10 @@ def plot_generation_vs_demand(results: pd.DataFrame) -> go.Figure:
     ))
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Generación Renovable vs Demanda",
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
-        hovermode="x unified",
-        template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         height=450,
     )
     
@@ -120,13 +135,11 @@ def plot_energy_balance(results: pd.DataFrame) -> go.Figure:
     ))
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Balance Energético por Fuente",
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
         barmode="stack",
-        hovermode="x unified",
-        template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         height=450,
     )
     
@@ -154,7 +167,7 @@ def plot_soc(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
     fig.add_trace(go.Scatter(
         x=results["hour"], y=results["soc"],
         name="SoC", line=dict(color=COLORS["soc"], width=3),
-        fill="tozeroy", fillcolor="rgba(63, 81, 181, 0.2)"
+        fill="tozeroy", fillcolor="rgba(129, 140, 248, 0.2)"
     ))
     
     fig.add_hline(y=min_soc, line_dash="dash", line_color="red",
@@ -163,12 +176,11 @@ def plot_soc(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
                   annotation_text=f"SoC Máx ({max_soc*100:.0f}%)")
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Estado de Carga de Batería (SoC)",
         xaxis_title="Hora del día",
         yaxis_title="SoC (fracción)",
         yaxis_range=[0, 1],
-        hovermode="x unified",
-        template="plotly_white",
         height=400,
     )
     
@@ -194,12 +206,10 @@ def plot_grid_exchange(results: pd.DataFrame) -> go.Figure:
     fig.add_hline(y=0, line_color="black", line_width=1)
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Intercambio de Energía con la Red Principal",
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW) [+ compra / - venta]",
-        hovermode="x unified",
-        template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         height=400,
     )
     
@@ -230,13 +240,11 @@ def plot_emissions(results: pd.DataFrame) -> go.Figure:
     ))
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Emisiones de CO₂ por Fuente",
         xaxis_title="Hora del día",
         yaxis_title="Emisiones (kg CO₂)",
         barmode="stack",
-        hovermode="x unified",
-        template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         height=400,
     )
     
@@ -254,18 +262,17 @@ def plot_thd(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
     fig.add_trace(go.Scatter(
         x=results["hour"], y=results["thd_pct"],
         name="THD", line=dict(color=COLORS["thd"], width=3),
-        fill="tozeroy", fillcolor="rgba(233, 30, 99, 0.15)"
+        fill="tozeroy", fillcolor="rgba(244, 114, 182, 0.15)"
     ))
     
     fig.add_hline(y=thd_limit, line_dash="dash", line_color="red",
                   annotation_text=f"Límite THD ({thd_limit}%)")
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Distorsión Armónica Total (THD)",
         xaxis_title="Hora del día",
         yaxis_title="THD (%)",
-        hovermode="x unified",
-        template="plotly_white",
         height=400,
     )
     
@@ -301,11 +308,10 @@ def plot_voltage(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
                   annotation_text="Nominal")
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Voltaje Nodal Promedio",
         xaxis_title="Hora del día",
         yaxis_title="Voltaje (p.u.)",
-        hovermode="x unified",
-        template="plotly_white",
         height=400,
     )
     
@@ -337,12 +343,10 @@ def plot_costs(results: pd.DataFrame) -> go.Figure:
     fig.add_hline(y=0, line_color="gray", line_width=0.5)
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Costos Horarios de Energía",
         xaxis_title="Hora del día",
         yaxis_title="USD [+ costo / - ingreso]",
-        hovermode="x unified",
-        template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         height=400,
     )
     
@@ -361,11 +365,10 @@ def plot_curtailment(results: pd.DataFrame) -> go.Figure:
     ))
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Curtailment de Energía Renovable",
         xaxis_title="Hora del día",
         yaxis_title="Potencia Recortada (kW)",
-        hovermode="x unified",
-        template="plotly_white",
         height=350,
     )
     
@@ -402,18 +405,21 @@ def plot_radar_performance(kpis: Dict[str, float], params: Dict[str, Any]) -> go
         r=values + [values[0]],  # Cerrar el polígono
         theta=categories + [categories[0]],
         fill="toself",
-        fillcolor="rgba(63, 81, 181, 0.3)",
-        line=dict(color="rgba(63, 81, 181, 0.8)", width=2),
+        fillcolor="rgba(96, 165, 250, 0.3)",
+        line=dict(color="rgba(96, 165, 250, 0.9)", width=2),
         name="Desempeño"
     ))
     
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100]),
+            radialaxis=dict(visible=True, range=[0, 100], gridcolor="rgba(100,200,255,0.1)"),
+            bgcolor="rgba(15,23,42,0.6)",
         ),
-        title="Radar de Desempeño del Escenario",
+        title="Radar de Desempeño Multidimensional",
         showlegend=False,
         height=450,
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#e2e8f0"),
     )
     
     return fig
@@ -438,12 +444,10 @@ def plot_bess_power(results: pd.DataFrame) -> go.Figure:
     fig.add_hline(y=0, line_color="black", line_width=1)
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Potencia de Carga/Descarga BESS",
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW) [+ carga / - descarga]",
-        hovermode="x unified",
-        template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         height=400,
     )
     
@@ -477,11 +481,10 @@ def plot_frequency_deviation(results: pd.DataFrame, params: Dict[str, Any]) -> g
                   annotation_text=f"-{max_dev} Hz")
     
     fig.update_layout(
+        **LAYOUT_DEFAULTS,
         title="Desviación de Frecuencia",
         xaxis_title="Hora del día",
         yaxis_title="Δf (Hz)",
-        hovermode="x unified",
-        template="plotly_white",
         height=350,
     )
     
