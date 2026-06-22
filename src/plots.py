@@ -38,12 +38,12 @@ LAYOUT_DEFAULTS = dict(
     font=dict(family="Inter, sans-serif", color="#1e293b"),
     legend=dict(
         orientation="h",
-        yanchor="bottom", y=1.02,
+        yanchor="bottom", y=1.08,
         xanchor="center", x=0.5,
         bgcolor="rgba(0,0,0,0)",
         font=dict(size=11)
     ),
-    margin=dict(l=50, r=20, t=60, b=40),
+    margin=dict(l=50, r=20, t=70, b=40),
     hovermode="x unified",
 )
 
@@ -90,11 +90,19 @@ def plot_generation_vs_demand(results: pd.DataFrame) -> go.Figure:
     ))
     
     fig.update_layout(
-        **LAYOUT_DEFAULTS,
+        **{k: v for k, v in LAYOUT_DEFAULTS.items() if k not in ("margin", "legend")},
         title=_title("Generación Renovable vs Demanda"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
         height=450,
+        margin=dict(l=50, r=20, t=90, b=40),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.06,
+            xanchor="center", x=0.5,
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(size=11),
+        ),
     )
     
     return fig
@@ -140,12 +148,20 @@ def plot_energy_balance(results: pd.DataFrame) -> go.Figure:
     ))
     
     fig.update_layout(
-        **LAYOUT_DEFAULTS,
+        **{k: v for k, v in LAYOUT_DEFAULTS.items() if k not in ("margin", "legend")},
         title=_title("Balance Energético por Fuente"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
         barmode="stack",
         height=450,
+        margin=dict(l=50, r=20, t=90, b=40),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.06,
+            xanchor="center", x=0.5,
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(size=11),
+        ),
     )
     
     return fig
