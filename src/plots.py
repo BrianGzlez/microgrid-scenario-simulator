@@ -39,13 +39,18 @@ LAYOUT_DEFAULTS = dict(
     legend=dict(
         orientation="h",
         yanchor="bottom", y=1.02,
-        xanchor="right", x=1,
+        xanchor="center", x=0.5,
         bgcolor="rgba(0,0,0,0)",
         font=dict(size=11)
     ),
-    margin=dict(l=50, r=20, t=50, b=40),
+    margin=dict(l=50, r=20, t=60, b=40),
     hovermode="x unified",
 )
+
+
+def _title(text: str) -> dict:
+    """Helper para crear título centrado uniforme."""
+    return dict(text=text, x=0.5, xanchor="center", font=dict(size=14, color="#1e293b"))
 
 
 def plot_generation_vs_demand(results: pd.DataFrame) -> go.Figure:
@@ -86,7 +91,7 @@ def plot_generation_vs_demand(results: pd.DataFrame) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Generación Renovable vs Demanda",
+        title=_title("Generación Renovable vs Demanda"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
         height=450,
@@ -136,7 +141,7 @@ def plot_energy_balance(results: pd.DataFrame) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Balance Energético por Fuente",
+        title=_title("Balance Energético por Fuente"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
         barmode="stack",
@@ -177,7 +182,7 @@ def plot_soc(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Estado de Carga de Batería (SoC)",
+        title=_title("Estado de Carga de Batería (SoC)"),
         xaxis_title="Hora del día",
         yaxis_title="SoC (fracción)",
         yaxis_range=[0, 1],
@@ -217,7 +222,7 @@ def plot_grid_exchange(results: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Intercambio con la Red Principal",
+        title=_title("Intercambio con la Red Principal"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
         height=400,
@@ -251,7 +256,7 @@ def plot_emissions(results: pd.DataFrame) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Emisiones de CO₂ por Fuente",
+        title=_title("Emisiones de CO₂ por Fuente"),
         xaxis_title="Hora del día",
         yaxis_title="Emisiones (kg CO₂)",
         barmode="stack",
@@ -280,7 +285,7 @@ def plot_thd(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Distorsión Armónica Total (THD)",
+        title=_title("Distorsión Armónica Total (THD)"),
         xaxis_title="Hora del día",
         yaxis_title="THD (%)",
         height=400,
@@ -319,7 +324,7 @@ def plot_voltage(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Voltaje Nodal Promedio",
+        title=_title("Voltaje Nodal Promedio"),
         xaxis_title="Hora del día",
         yaxis_title="Voltaje (p.u.)",
         height=400,
@@ -354,7 +359,7 @@ def plot_costs(results: pd.DataFrame) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Costos Horarios de Energía",
+        title=_title("Costos Horarios de Energía"),
         xaxis_title="Hora del día",
         yaxis_title="RD$ [+ costo / - ingreso]",
         height=400,
@@ -376,7 +381,7 @@ def plot_curtailment(results: pd.DataFrame) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Curtailment de Energía Renovable",
+        title=_title("Curtailment de Energía Renovable"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia Recortada (kW)",
         height=350,
@@ -451,13 +456,13 @@ def plot_radar_performance(kpis: Dict[str, float], params: Dict[str, Any]) -> go
         title=dict(
             text="Desempeño Multidimensional",
             font=dict(size=14, color="#1e293b"),
-            x=0.5,
+            x=0.5, xanchor="center",
         ),
         showlegend=False,
-        height=420,
+        height=380,
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter, sans-serif", color="#1e293b"),
-        margin=dict(t=60, b=40, l=60, r=60),
+        margin=dict(t=50, b=40, l=60, r=60),
     )
 
     return fig
@@ -483,7 +488,7 @@ def plot_bess_power(results: pd.DataFrame) -> go.Figure:
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Potencia de Carga/Descarga BESS",
+        title=_title("Potencia de Carga/Descarga BESS"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW) [+ carga / - descarga]",
         height=400,
@@ -520,7 +525,7 @@ def plot_frequency_deviation(results: pd.DataFrame, params: Dict[str, Any]) -> g
     
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title="Desviación de Frecuencia",
+        title=_title("Desviación de Frecuencia"),
         xaxis_title="Hora del día",
         yaxis_title="Δf (Hz)",
         height=350,
@@ -531,8 +536,7 @@ def plot_frequency_deviation(results: pd.DataFrame, params: Dict[str, Any]) -> g
 
 def plot_energy_mix_donut(results: pd.DataFrame) -> go.Figure:
     """
-    Gráfica de composición del suministro — barras horizontales limpias
-    mostrando la proporción de cada fuente. Más legible que una dona.
+    Gráfica de dona con leyenda lateral limpia y título centrado.
     """
     solar = results["pv_generation_kw"].sum()
     wind = results["wind_generation_kw"].sum()
@@ -541,11 +545,6 @@ def plot_energy_mix_donut(results: pd.DataFrame) -> go.Figure:
     diesel = results["diesel_generation_kw"].sum()
     gas = results["gas_generation_kw"].sum()
 
-    sources = []
-    values = []
-    colors = []
-
-    # Orden de mayor a menor
     raw = [
         ("Solar PV", solar, COLORS["solar"]),
         ("Eólica", wind, COLORS["wind"]),
@@ -555,61 +554,51 @@ def plot_energy_mix_donut(results: pd.DataFrame) -> go.Figure:
         ("Gas Natural", gas, COLORS["gas"]),
     ]
 
+    labels = []
+    values = []
+    colors = []
     for name, val, color in raw:
         if val > 0:
-            sources.append(name)
+            labels.append(name)
             values.append(val)
             colors.append(color)
 
     total = sum(values)
-    percentages = [(v / total) * 100 for v in values]
 
-    # Ordenar de mayor a menor
-    combined = sorted(zip(percentages, sources, values, colors), reverse=True)
-    percentages = [c[0] for c in combined]
-    sources = [c[1] for c in combined]
-    values = [c[2] for c in combined]
-    colors = [c[3] for c in combined]
-
-    # Invertir para que el mayor quede arriba en barras horizontales
-    sources.reverse()
-    percentages.reverse()
-    values.reverse()
-    colors.reverse()
-
-    fig = go.Figure()
-
-    fig.add_trace(go.Bar(
-        y=sources,
-        x=percentages,
-        orientation="h",
-        marker=dict(
-            color=colors,
-            line=dict(color="#ffffff", width=1),
-        ),
-        text=[f"{p:.1f}% ({v:.0f} kWh)" for p, v in zip(percentages, values)],
-        textposition="auto",
-        textfont=dict(size=11, color="#1e293b"),
-        hovertemplate="%{y}: %{x:.1f}%<br>%{text}<extra></extra>",
-    ))
+    fig = go.Figure(data=[go.Pie(
+        labels=labels,
+        values=values,
+        hole=0.5,
+        marker=dict(colors=colors, line=dict(color="#ffffff", width=2.5)),
+        textinfo="percent",
+        textfont=dict(size=12, color="#1e293b"),
+        textposition="outside",
+        hovertemplate="%{label}<br>%{value:.0f} kWh (%{percent})<extra></extra>",
+        sort=False,
+    )])
 
     fig.update_layout(
         title=dict(
-            text=f"Composición del Suministro — {total:.0f} kWh total",
+            text="Composición del Suministro",
             font=dict(size=14, color="#1e293b"),
+            x=0.5, xanchor="center",
         ),
-        xaxis=dict(
-            title="Participación (%)",
-            range=[0, 100],
-            gridcolor="rgba(0,0,0,0.05)",
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="top", y=-0.05,
+            xanchor="center", x=0.5,
+            font=dict(size=11),
         ),
-        yaxis=dict(title=""),
+        height=380,
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="#ffffff",
         font=dict(family="Inter, sans-serif", color="#1e293b"),
-        height=350,
-        margin=dict(t=50, b=40, l=90, r=20),
-        showlegend=False,
+        margin=dict(t=50, b=60, l=20, r=20),
+        annotations=[dict(
+            text=f"<b>{total:,.0f}</b><br>kWh",
+            x=0.5, y=0.5, font_size=15, font_color="#1e293b",
+            showarrow=False,
+        )]
     )
 
     return fig
@@ -636,10 +625,10 @@ def plot_hourly_cost_line(results: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         **LAYOUT_DEFAULTS,
-        title=dict(text="Costo Operativo Acumulado", font=dict(size=14, color="#1e293b")),
+        title=_title("Costo Operativo Acumulado"),
         xaxis_title="Hora del día",
         yaxis_title="RD$ acumulados",
-        height=350,
+        height=380,
     )
 
     return fig

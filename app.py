@@ -378,18 +378,18 @@ with tab_overview:
 
     # --- Fila: Generación vs Demanda (ancho completo) ---
     fig_gen = plot_generation_vs_demand(results)
-    fig_gen.update_layout(height=380, margin=dict(t=50, b=40))
+    fig_gen.update_layout(height=380)
     st.plotly_chart(fig_gen, use_container_width=True)
 
     # --- Fila: SoC + Intercambio con Red ---
     col_left, col_right = st.columns(2)
     with col_left:
         fig_soc = plot_soc(results, params)
-        fig_soc.update_layout(height=320, margin=dict(t=50, b=40))
+        fig_soc.update_layout(height=340)
         st.plotly_chart(fig_soc, use_container_width=True)
     with col_right:
         fig_grid = plot_grid_exchange(results)
-        fig_grid.update_layout(height=320, margin=dict(t=50, b=40))
+        fig_grid.update_layout(height=340)
         st.plotly_chart(fig_grid, use_container_width=True)
 
 # =============================================================================
