@@ -606,23 +606,6 @@ with tab_pq:
             "Refleja desbalances instantáneos entre generación y demanda."
         )
 
-    st.divider()
-
-    # ─── Notas técnicas ────────────────────────────────────────────────
-    st.markdown('<div class="section-header">Notas del Modelo</div>', unsafe_allow_html=True)
-    st.markdown("""
-    Los indicadores de calidad de energía presentados son **aproximaciones simplificadas**:
-
-    | Indicador | Método de cálculo | Limitación |
-    |-----------|-------------------|------------|
-    | THD | Proporcional a carga EV y actividad de convertidores BESS | No modela armónicos individuales |
-    | Voltaje | Desviación proporcional al balance neto de potencia | No resuelve flujo de potencia AC |
-    | Frecuencia | Proporcional al desbalance generación-demanda | No considera inercia del sistema |
-
-    Para un análisis riguroso se requiere: flujo de potencia Newton-Raphson, análisis armónico
-    con modelos de convertidores, y simulación dinámica para respuesta de frecuencia.
-    """)
-
 # =============================================================================
 # PESTAÑA: ECONOMÍA
 # =============================================================================
