@@ -723,7 +723,108 @@ with tab_compare:
             }
         )
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        # ─── Gráficas comparativas (solo si hay 2+ escenarios) ────────
+        if len(st.session_state.saved_scenarios) >= 2:
+            st.divider()
+            st.markdown('<div class="section-header">Comparación Visual</div>',
+                        unsafe_allow_html=True)
+
+            import plotly.graph_objects as go
+
+            sc_names = [s["name"] for s in st.session_state.saved_scenarios]
+
+            # Gráfica 1: Barras comparativas de métricas clave
+            col1, col2 = st.columns(2)
+            with col1:
+                fig_comp_cost = go.Figure()
+                fig_comp_cost.add_trace(go.Bar(
+                    x=sc_names,
+                    y=[s["daily_cost_usd"] for s in st.session_state.saved_scenarios],
+                    name="Costo Op. Diario",
+                    marker_color="#3b82f6",
+                    text=[f"RD${s['daily_cost_usd']:,.0f}" for s in st.session_state.saved_scenarios],
+                    textposition="outside", textfont=dict(size=10),
+                ))
+                fig_comp_cost.update_layout(
+                    title=dict(text="Costo Operativo Diario", x=0.5, xanchor="center",
+                               font=dict(size=14, color="#1e293b")),
+                    yaxis_title="RD$",
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#ffffff",
+                    font=dict(family="Inter, sans-serif", color="#1e293b"),
+                    height=340, margin=dict(t=60, b=40, l=50, r=20),
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_comp_cost, use_container_width=True)
+
+            with col2:
+                fig_comp_em = go.Figure()
+                fig_comp_em.add_trace(go.Bar(
+                    x=sc_names,
+                    y=[s["total_emissions_kg"] for s in st.session_state.saved_scenarios],
+                    name="Emisiones",
+                    marker_color="#10b981",
+                    text=[f"{s['total_emissions_kg']:.0f} kg" for s in st.session_state.saved_scenarios],
+                    textposition="outside", textfont=dict(size=10),
+                ))
+                fig_comp_em.update_layout(
+                    title=dict(text="Emisiones CO₂ Diarias", x=0.5, xanchor="center",
+                               font=dict(size=14, color="#1e293b")),
+                    yaxis_title="kg CO₂",
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#ffffff",
+                    font=dict(family="Inter, sans-serif", color="#1e293b"),
+                    height=340, margin=dict(t=60, b=40, l=50, r=20),
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_comp_em, use_container_width=True)
+
+            # Gráfica 2: Radar comparativo
+            col1, col2 = st.columns(2)
+            with col1:
+                fig_comp_ren = go.Figure()
+                fig_comp_ren.add_trace(go.Bar(
+                    x=sc_names,
+                    y=[s["renewable_pct"] * 100 for s in st.session_state.saved_scenarios],
+                    marker_color="#f59e0b",
+                    text=[f"{s['renewable_pct']*100:.1f}%" for s in st.session_state.saved_scenarios],
+                    textposition="outside", textfont=dict(size=10),
+                ))
+                fig_comp_ren.update_layout(
+                    title=dict(text="Penetración Renovable", x=0.5, xanchor="center",
+                               font=dict(size=14, color="#1e293b")),
+                    yaxis_title="%", yaxis_range=[0, 105],
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#ffffff",
+                    font=dict(family="Inter, sans-serif", color="#1e293b"),
+                    height=340, margin=dict(t=60, b=40, l=50, r=20),
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_comp_ren, use_container_width=True)
+
+            with col2:
+                fig_comp_idx = go.Figure()
+                fig_comp_idx.add_trace(go.Bar(
+                    x=sc_names,
+                    y=[s["performance_index"] for s in st.session_state.saved_scenarios],
+                    marker_color=[
+                        "#16a34a" if s["performance_index"] > 65
+                        else ("#d97706" if s["performance_index"] > 40 else "#dc2626")
+                        for s in st.session_state.saved_scenarios
+                    ],
+                    text=[f"{s['performance_index']:.1f}" for s in st.session_state.saved_scenarios],
+                    textposition="outside", textfont=dict(size=10),
+                ))
+                fig_comp_idx.update_layout(
+                    title=dict(text="Índice Global de Desempeño", x=0.5, xanchor="center",
+                               font=dict(size=14, color="#1e293b")),
+                    yaxis_title="Puntos (0–100)", yaxis_range=[0, 105],
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#ffffff",
+                    font=dict(family="Inter, sans-serif", color="#1e293b"),
+                    height=340, margin=dict(t=60, b=40, l=50, r=20),
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_comp_idx, use_container_width=True)
+
+        st.divider()
+
         col_dl1, col_dl2 = st.columns(2)
         with col_dl1:
             st.download_button(
