@@ -733,71 +733,76 @@ with tab_compare:
 
             sc_data = st.session_state.saved_scenarios
             sc_names = [s["name"] for s in sc_data]
-            n_scenarios = len(sc_data)
-
-            # Radar comparativo de todos los escenarios
-            categories = ["Costo", "Emisiones", "Renovable", "THD", "Índice"]
 
             # Normalizar métricas a 0–100 (mejor = mayor)
             max_cost = max(abs(s["daily_cost_usd"]) for s in sc_data) or 1
             max_em = max(s["total_emissions_kg"] for s in sc_data) or 1
 
+            categories = ["Económico", "Ambiental", "Renovable", "Calidad (THD)", "Desempeño"]
             radar_colors = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"]
 
             fig_radar_comp = go.Figure()
 
             for i, s in enumerate(sc_data):
-                cost_score = max(0, 100 * (1 - s["daily_cost_usd"] / max_cost)) if max_cost > 0 else 50
-                em_score = max(0, 100 * (1 - s["total_emissions_kg"] / max_em)) if max_em > 0 else 50
+                cost_score = max(0, min(100, 100 * (1 - abs(s["daily_cost_usd"]) / max_cost)))
+                em_score = max(0, min(100, 100 * (1 - s["total_emissions_kg"] / max_em)))
                 ren_score = s["renewable_pct"] * 100
-                thd_score = max(0, 100 * (1 - s["thd_max_pct"] / 10))
+                thd_score = max(0, min(100, 100 * (1 - s["thd_max_pct"] / 10)))
                 idx_score = s["performance_index"]
 
                 values = [cost_score, em_score, ren_score, thd_score, idx_score]
                 color = radar_colors[i % len(radar_colors)]
+                r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
 
                 fig_radar_comp.add_trace(go.Scatterpolar(
                     r=values + [values[0]],
                     theta=categories + [categories[0]],
                     fill="toself",
-                    fillcolor=f"rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},0.1)",
-                    line=dict(color=color, width=2.5),
+                    fillcolor=f"rgba({r},{g},{b},0.08)",
+                    line=dict(color=color, width=3),
                     name=s["name"],
-                    marker=dict(size=5),
+                    marker=dict(size=8, color=color, symbol="circle"),
                 ))
 
             fig_radar_comp.update_layout(
                 polar=dict(
                     radialaxis=dict(
                         visible=True, range=[0, 100],
-                        tickvals=[25, 50, 75, 100],
-                        gridcolor="rgba(0,0,0,0.06)",
-                        tickfont=dict(size=9, color="#64748b"),
+                        tickvals=[20, 40, 60, 80, 100],
+                        ticktext=["20", "40", "60", "80", "100"],
+                        gridcolor="rgba(0,0,0,0.05)",
+                        linecolor="rgba(0,0,0,0.08)",
+                        tickfont=dict(size=10, color="#94a3b8"),
                     ),
                     angularaxis=dict(
-                        gridcolor="rgba(0,0,0,0.06)",
-                        tickfont=dict(size=12, color="#334155"),
+                        gridcolor="rgba(0,0,0,0.08)",
+                        linecolor="rgba(0,0,0,0.08)",
+                        tickfont=dict(size=13, color="#1e293b"),
                     ),
                     bgcolor="rgba(0,0,0,0)",
                 ),
-                title=dict(text="Radar Comparativo de Escenarios", x=0.5, xanchor="center",
-                           font=dict(size=14, color="#1e293b")),
+                title=dict(
+                    text="Comparación Multidimensional de Escenarios",
+                    x=0.5, xanchor="center",
+                    font=dict(size=15, color="#1e293b"),
+                ),
                 showlegend=True,
                 legend=dict(
-                    orientation="h", yanchor="top", y=-0.1,
-                    xanchor="center", x=0.5, font=dict(size=11),
+                    orientation="h", yanchor="top", y=-0.05,
+                    xanchor="center", x=0.5,
+                    font=dict(size=12),
+                    bgcolor="rgba(0,0,0,0)",
                 ),
-                height=450,
+                height=500,
                 paper_bgcolor="rgba(0,0,0,0)",
                 font=dict(family="Inter, sans-serif", color="#1e293b"),
-                margin=dict(t=60, b=80, l=60, r=60),
+                margin=dict(t=70, b=70, l=80, r=80),
             )
 
             st.plotly_chart(fig_radar_comp, use_container_width=True)
             st.caption(
-                "Cada eje se normaliza de 0 a 100 (mayor = mejor). "
-                "Costo y emisiones se invierten (menor costo = mejor puntaje). "
-                "El escenario con mayor área tiene mejor desempeño global."
+                "Cada eje normalizado de 0 a 100 (mayor = mejor). "
+                "El escenario con mayor área tiene mejor desempeño integral."
             )
 
         st.divider()
