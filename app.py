@@ -20,7 +20,8 @@ from src.plots import (
     plot_thd, plot_voltage, plot_costs,
     plot_curtailment, plot_radar_performance,
     plot_bess_power, plot_frequency_deviation,
-    plot_energy_mix_donut, plot_hourly_cost_line
+    plot_energy_mix_donut, plot_hourly_cost_line,
+    plot_bess_energy_stored, plot_bess_cycles, plot_soh_evolution
 )
 
 st.set_page_config(
@@ -498,15 +499,52 @@ with tab_battery:
         ("Degradación Diaria", f"{(bess_initial_soh - kpis['soh_final'])*100:.4f}%", ""),
     ])
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.divider()
 
+    # ─── Estado de carga ───────────────────────────────────────────────
+    st.markdown('<div class="section-header">Estado de Carga</div>', unsafe_allow_html=True)
+    st.caption(
+        "Evolución del SoC durante las 24 horas. Las líneas punteadas marcan los límites "
+        "operativos configurados. El BESS no debe operar fuera de estos rangos."
+    )
     fig_soc = plot_soc(results, params)
-    fig_soc.update_layout(height=380, margin=dict(t=50, b=40))
+    fig_soc.update_layout(height=380)
     st.plotly_chart(fig_soc, use_container_width=True)
 
-    fig_bess = plot_bess_power(results)
-    fig_bess.update_layout(height=350, margin=dict(t=50, b=40))
-    st.plotly_chart(fig_bess, use_container_width=True)
+    st.divider()
+
+    # ─── Potencia y energía ────────────────────────────────────────────
+    st.markdown('<div class="section-header">Potencia y Energía</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        fig_bess = plot_bess_power(results)
+        fig_bess.update_layout(height=380)
+        st.plotly_chart(fig_bess, use_container_width=True)
+        st.caption("Potencia instantánea. Barras arriba = carga, abajo = descarga.")
+    with col2:
+        fig_energy = plot_bess_energy_stored(results, params)
+        st.plotly_chart(fig_energy, use_container_width=True)
+        st.caption("Energía total almacenada en kWh absolutos (SoC x Capacidad).")
+
+    st.divider()
+
+    # ─── Degradación y ciclos ──────────────────────────────────────────
+    st.markdown('<div class="section-header">Degradación y Vida Útil</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        fig_cycles = plot_bess_cycles(results, params)
+        st.plotly_chart(fig_cycles, use_container_width=True)
+        st.caption(
+            "Ciclos equivalentes acumulados durante el día. "
+            "Un ciclo = carga completa + descarga completa (capacidad nominal)."
+        )
+    with col2:
+        fig_soh = plot_soh_evolution(results)
+        st.plotly_chart(fig_soh, use_container_width=True)
+        st.caption(
+            "Degradación del SoH hora a hora. Modelo simplificado lineal "
+            "proporcional a la profundidad de ciclado."
+        )
 
 # =============================================================================
 # PESTAÑA: CALIDAD DE ENERGÍA

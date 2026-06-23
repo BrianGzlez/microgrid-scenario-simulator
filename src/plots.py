@@ -501,14 +501,15 @@ def plot_bess_power(results: pd.DataFrame) -> go.Figure:
         name="Descarga BESS", marker_color=COLORS["bess_discharge"]
     ))
     
-    fig.add_hline(y=0, line_color="black", line_width=1)
+    fig.add_hline(y=0, line_color="#94a3b8", line_width=1, line_dash="dot")
     
     fig.update_layout(
-        **LAYOUT_DEFAULTS,
-        title=_title("Potencia de Carga/Descarga BESS"),
+        **{k: v for k, v in LAYOUT_DEFAULTS.items() if k != "margin"},
+        title=_title("Potencia de Carga / Descarga BESS"),
         xaxis_title="Hora del día",
-        yaxis_title="Potencia (kW) [+ carga / - descarga]",
+        yaxis_title="Potencia (kW)",
         height=400,
+        margin=dict(l=50, r=20, t=85, b=40),
     )
     
     return fig
@@ -646,6 +647,108 @@ def plot_hourly_cost_line(results: pd.DataFrame) -> go.Figure:
         xaxis_title="Hora del día",
         yaxis_title="RD$ acumulados",
         height=380,
+    )
+
+    return fig
+
+
+def plot_bess_energy_stored(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
+    """
+    Gráfica de energía almacenada en el BESS (kWh) a lo largo del día.
+    """
+    capacity = params["bess"]["energy_capacity_kwh"]
+    energy_stored = results["soc"] * capacity
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=results["hour"], y=energy_stored,
+        name="Energía almacenada",
+        line=dict(color="#2563eb", width=2.5),
+        fill="tozeroy",
+        fillcolor="rgba(37, 99, 235, 0.1)",
+        hovertemplate="Hora %{x}<br>%{y:.1f} kWh<extra></extra>",
+    ))
+
+    # Líneas de referencia
+    fig.add_hline(
+        y=params["bess"]["min_soc"] * capacity,
+        line_dash="dash", line_color="#dc2626", line_width=1,
+        annotation_text=f"Mín: {params['bess']['min_soc'] * capacity:.0f} kWh",
+    )
+    fig.add_hline(
+        y=params["bess"]["max_soc"] * capacity,
+        line_dash="dash", line_color="#16a34a", line_width=1,
+        annotation_text=f"Máx: {params['bess']['max_soc'] * capacity:.0f} kWh",
+    )
+
+    fig.update_layout(
+        **LAYOUT_DEFAULTS,
+        title=_title("Energía Almacenada en BESS"),
+        xaxis_title="Hora del día",
+        yaxis_title="Energía (kWh)",
+        yaxis_range=[0, capacity],
+        height=380,
+    )
+
+    return fig
+
+
+def plot_bess_cycles(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
+    """
+    Gráfica de ciclos acumulados y throughput del BESS.
+    """
+    capacity = params["bess"]["energy_capacity_kwh"]
+    charge_energy = results["bess_charge_kw"].values  # kWh (paso = 1h)
+    discharge_energy = results["bess_discharge_kw"].values
+
+    throughput = (charge_energy + discharge_energy) / 2  # medio ciclo
+    cumulative_throughput = np.cumsum(throughput)
+    equivalent_cycles = cumulative_throughput / capacity if capacity > 0 else cumulative_throughput * 0
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=results["hour"], y=equivalent_cycles,
+        name="Ciclos equivalentes",
+        line=dict(color="#7c3aed", width=2.5),
+        fill="tozeroy",
+        fillcolor="rgba(124, 58, 237, 0.08)",
+        hovertemplate="Hora %{x}<br>%{y:.3f} ciclos<extra></extra>",
+    ))
+
+    fig.update_layout(
+        **LAYOUT_DEFAULTS,
+        title=_title("Ciclos Equivalentes Acumulados"),
+        xaxis_title="Hora del día",
+        yaxis_title="Ciclos equivalentes",
+        height=380,
+    )
+
+    return fig
+
+
+def plot_soh_evolution(results: pd.DataFrame) -> go.Figure:
+    """
+    Gráfica de evolución del estado de salud (SoH) durante el día.
+    """
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=results["hour"], y=results["soh"] * 100,
+        name="SoH",
+        line=dict(color="#059669", width=2.5),
+        mode="lines+markers",
+        marker=dict(size=4),
+        hovertemplate="Hora %{x}<br>SoH: %{y:.4f}%<extra></extra>",
+    ))
+
+    fig.update_layout(
+        **LAYOUT_DEFAULTS,
+        title=_title("Evolución del Estado de Salud (SoH)"),
+        xaxis_title="Hora del día",
+        yaxis_title="SoH (%)",
+        height=340,
     )
 
     return fig
