@@ -856,42 +856,47 @@ def plot_daily_revenue_cost(results: pd.DataFrame) -> go.Figure:
 
 def plot_cost_by_period(results: pd.DataFrame) -> go.Figure:
     """
-    Gráfica de costo neto agrupado por periodo del día (madrugada, mañana, tarde, noche).
+    Gráfica de costo neto por periodo del día — dona para mostrar distribución.
     """
     periods = {
-        "Madrugada\n(0–6h)": results[(results["hour"] >= 0) & (results["hour"] < 6)]["net_cost_usd"].sum(),
-        "Mañana\n(6–12h)": results[(results["hour"] >= 6) & (results["hour"] < 12)]["net_cost_usd"].sum(),
-        "Tarde\n(12–18h)": results[(results["hour"] >= 12) & (results["hour"] < 18)]["net_cost_usd"].sum(),
-        "Noche\n(18–24h)": results[(results["hour"] >= 18) & (results["hour"] < 24)]["net_cost_usd"].sum(),
+        "Madrugada (0–6h)": results[(results["hour"] >= 0) & (results["hour"] < 6)]["net_cost_usd"].sum(),
+        "Mañana (6–12h)": results[(results["hour"] >= 6) & (results["hour"] < 12)]["net_cost_usd"].sum(),
+        "Tarde (12–18h)": results[(results["hour"] >= 12) & (results["hour"] < 18)]["net_cost_usd"].sum(),
+        "Noche (18–24h)": results[(results["hour"] >= 18) & (results["hour"] < 24)]["net_cost_usd"].sum(),
     }
 
     names = list(periods.keys())
     vals = list(periods.values())
-    bar_colors = ["#1e40af" if v >= 0 else "#16a34a" for v in vals]
+    total = sum(vals)
 
-    fig = go.Figure()
+    # Para la dona usamos valores absolutos (proporciones)
+    abs_vals = [abs(v) for v in vals]
+    period_colors = ["#1e3a5f", "#2563eb", "#60a5fa", "#93c5fd"]
 
-    fig.add_trace(go.Bar(
-        x=names, y=vals,
-        marker=dict(color=bar_colors, line=dict(color="#ffffff", width=1)),
-        text=[f"RD${v:,.0f}" for v in vals],
+    fig = go.Figure(data=[go.Pie(
+        labels=names,
+        values=abs_vals,
+        hole=0.5,
+        marker=dict(colors=period_colors, line=dict(color="#ffffff", width=2)),
+        textinfo="label+percent",
         textposition="outside",
         textfont=dict(size=11),
-        hovertemplate="%{x}: RD$%{y:,.0f}<extra></extra>",
-    ))
-
-    fig.add_hline(y=0, line_color="#94a3b8", line_width=1, line_dash="dot")
+        hovertemplate="%{label}<br>RD$%{value:,.0f}<extra></extra>",
+        sort=False,
+    )])
 
     fig.update_layout(
-        title=_title("Costo Neto por Periodo del Día"),
-        xaxis=dict(title=""),
-        yaxis=dict(title="RD$", gridcolor="rgba(0,0,0,0.05)"),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="#ffffff",
-        font=dict(family="Inter, sans-serif", color="#1e293b"),
-        height=340,
-        margin=dict(t=60, b=40, l=60, r=20),
+        title=_title("Distribución de Costos por Periodo"),
         showlegend=False,
+        height=380,
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#1e293b"),
+        margin=dict(t=60, b=40, l=20, r=20),
+        annotations=[dict(
+            text=f"<b>RD${total:,.0f}</b><br>diario",
+            x=0.5, y=0.5, font_size=13, font_color="#1e293b",
+            showarrow=False,
+        )]
     )
 
     return fig

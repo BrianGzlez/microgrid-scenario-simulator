@@ -650,11 +650,12 @@ with tab_economics:
         fig_period = plot_cost_by_period(results)
         st.plotly_chart(fig_period, use_container_width=True)
         st.caption(
-            "Costo neto agrupado por periodo. Valores negativos = ganancia neta en ese periodo."
+            "Proporción del costo diario distribuida por periodo. "
+            "Muestra en qué horas se concentra el gasto operativo."
         )
     with col2:
         fig_cum = plot_hourly_cost_line(results)
-        st.plotly_chart(fig_cum, use_container_width=True)
+        st.plotly_chart(fig_cum, use_container_width=True, key="econ_cost_accum")
         st.caption("Acumulación progresiva del costo operativo a lo largo del día.")
 
     st.divider()
