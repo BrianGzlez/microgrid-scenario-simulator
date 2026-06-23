@@ -202,7 +202,7 @@ with tab_params:
         w_renewable = st.slider("Peso renovable", 0.0, 1.0, 0.15, 0.05)
         total_w = w_economic + w_technical + w_environmental + w_renewable
         if abs(total_w - 1.0) > 0.01:
-            st.error(f"Suma actual: {total_w:.2f} — debe ser 1.0")
+            st.caption(f"Suma: {total_w:.2f} — se normalizará automáticamente")
         else:
             st.caption(f"Suma de pesos: {total_w:.2f}")
 
@@ -304,17 +304,23 @@ def run_cached_simulation(params_json: str):
     kpis = calculate_kpis(avg_results, p)
     return avg_results, kpis
 
+# Validar
 valid = True
 if bess_min_soc >= bess_max_soc:
     valid = False
-if abs(total_w - 1.0) > 0.01:
-    valid = False
+
+# Auto-normalizar pesos si no suman 1.0
+if total_w > 0 and abs(total_w - 1.0) > 0.01:
+    params["optimization_weights"]["economic"] = w_economic / total_w
+    params["optimization_weights"]["technical"] = w_technical / total_w
+    params["optimization_weights"]["environmental"] = w_environmental / total_w
+    params["optimization_weights"]["renewable"] = w_renewable / total_w
 
 if valid:
     params_json = json.dumps(params, sort_keys=True)
     results, kpis = run_cached_simulation(params_json)
 else:
-    st.error("Parámetros inválidos. Verifique que SoC mín < SoC máx y que los pesos sumen 1.0")
+    st.error("Parámetros inválidos. Verifique que SoC mínimo sea menor que SoC máximo.")
     st.stop()
 
 # =============================================================================
