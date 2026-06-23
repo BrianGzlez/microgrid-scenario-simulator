@@ -554,28 +554,74 @@ with tab_pq:
                 unsafe_allow_html=True)
 
     thd_ok = kpis["thd_max_pct"] <= thd_limit
+    v_min_val = results["voltage_pu"].min()
+    v_max_val = results["voltage_pu"].max()
+    v_ok = v_min_val >= v_min and v_max_val <= v_max
+    freq_max_val = results["frequency_deviation_hz"].abs().max()
+    freq_ok = freq_max_val <= freq_max_dev
+
     render_kpi_row([
         ("THD Máximo", f"{kpis['thd_max_pct']:.2f}%", "good" if thd_ok else "bad"),
         ("THD Promedio", f"{kpis['thd_avg_pct']:.2f}%", ""),
-        ("Límite Normativo", f"{thd_limit}%", ""),
-        ("Cumplimiento", "Cumple" if thd_ok else "Excede límite", "good" if thd_ok else "bad"),
+        ("Voltaje Mín/Máx", f"{v_min_val:.3f} / {v_max_val:.3f} p.u.", "good" if v_ok else "warn"),
+        ("Δf Máxima", f"{freq_max_val:.3f} Hz", "good" if freq_ok else "warn"),
+        ("Cumplimiento THD", "Cumple" if thd_ok else "Excede", "good" if thd_ok else "bad"),
     ])
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.divider()
 
+    # ─── Distorsión Armónica ───────────────────────────────────────────
+    st.markdown('<div class="section-header">Distorsión Armónica Total (THD)</div>',
+                unsafe_allow_html=True)
+    st.caption(
+        "El THD aumenta con mayor proporción de carga EV y actividad de convertidores del BESS. "
+        f"Límite normativo IEEE 519: {thd_limit}%. "
+        + ("El sistema cumple con el estándar." if thd_ok else "Se supera el límite en algunas horas.")
+    )
+    fig_thd = plot_thd(results, params)
+    fig_thd.update_layout(height=360)
+    st.plotly_chart(fig_thd, use_container_width=True)
+
+    st.divider()
+
+    # ─── Voltaje y Frecuencia ──────────────────────────────────────────
+    st.markdown('<div class="section-header">Regulación de Voltaje y Frecuencia</div>',
+                unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
-        fig_thd = plot_thd(results, params)
-        fig_thd.update_layout(height=350, margin=dict(t=50, b=40))
-        st.plotly_chart(fig_thd, use_container_width=True)
-    with col2:
         fig_v = plot_voltage(results, params)
-        fig_v.update_layout(height=350, margin=dict(t=50, b=40))
+        fig_v.update_layout(height=360)
         st.plotly_chart(fig_v, use_container_width=True)
+        st.caption(
+            f"Voltaje nodal promedio. Rango permitido: {v_min}–{v_max} p.u. "
+            "La inyección renovable puede causar sobrevoltaje; alta demanda, subvoltaje."
+        )
+    with col2:
+        fig_freq = plot_frequency_deviation(results, params)
+        fig_freq.update_layout(height=360)
+        st.plotly_chart(fig_freq, use_container_width=True)
+        st.caption(
+            f"Desviación respecto a {freq_nominal} Hz. "
+            f"Rango aceptable: ±{freq_max_dev} Hz. "
+            "Refleja desbalances instantáneos entre generación y demanda."
+        )
 
-    fig_freq = plot_frequency_deviation(results, params)
-    fig_freq.update_layout(height=300, margin=dict(t=50, b=40))
-    st.plotly_chart(fig_freq, use_container_width=True)
+    st.divider()
+
+    # ─── Notas técnicas ────────────────────────────────────────────────
+    st.markdown('<div class="section-header">Notas del Modelo</div>', unsafe_allow_html=True)
+    st.markdown("""
+    Los indicadores de calidad de energía presentados son **aproximaciones simplificadas**:
+
+    | Indicador | Método de cálculo | Limitación |
+    |-----------|-------------------|------------|
+    | THD | Proporcional a carga EV y actividad de convertidores BESS | No modela armónicos individuales |
+    | Voltaje | Desviación proporcional al balance neto de potencia | No resuelve flujo de potencia AC |
+    | Frecuencia | Proporcional al desbalance generación-demanda | No considera inercia del sistema |
+
+    Para un análisis riguroso se requiere: flujo de potencia Newton-Raphson, análisis armónico
+    con modelos de convertidores, y simulación dinámica para respuesta de frecuencia.
+    """)
 
 # =============================================================================
 # PESTAÑA: ECONOMÍA
