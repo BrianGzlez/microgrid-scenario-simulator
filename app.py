@@ -91,10 +91,11 @@ st.markdown("""
 # =============================================================================
 # ENCABEZADO
 # =============================================================================
-st.markdown("# Simulador de Escenarios de Microrred")
+st.markdown("# Simulador de Escenarios de Microrred Multinodal")
 st.caption(
-    "Análisis What-If para microrredes multinodales · Generación renovable · "
-    "BESS · Vehículos eléctricos · Calidad de energía · Optimización multi-objetivo"
+    "Plataforma de simulación y análisis What-If para el diseño óptimo de microrredes con "
+    "generación solar y eólica, almacenamiento en baterías (BESS), carga de vehículos eléctricos, "
+    "interconexión con la red principal y evaluación técnico-económica-ambiental."
 )
 st.divider()
 
