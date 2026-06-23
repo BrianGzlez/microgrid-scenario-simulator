@@ -250,36 +250,48 @@ def plot_grid_exchange(results: pd.DataFrame) -> go.Figure:
 
 def plot_emissions(results: pd.DataFrame) -> go.Figure:
     """
-    Gráfica de emisiones por fuente.
+    Gráfica de emisiones por fuente — colores más vivos y espaciado correcto.
     """
     fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        x=results["hour"], y=results["emissions_diesel_kg"],
-        name="Diésel", marker_color=COLORS["diesel"]
-    ))
-    fig.add_trace(go.Bar(
-        x=results["hour"], y=results["emissions_gas_kg"],
-        name="Gas Natural", marker_color=COLORS["gas"]
-    ))
+
     fig.add_trace(go.Bar(
         x=results["hour"], y=results["emissions_solar_kg"],
-        name="Solar", marker_color=COLORS["solar"]
+        name="Solar", marker_color="#f59e0b",
+        hovertemplate="Hora %{x}<br>Solar: %{y:.2f} kg<extra></extra>",
     ))
     fig.add_trace(go.Bar(
         x=results["hour"], y=results["emissions_wind_kg"],
-        name="Eólica", marker_color=COLORS["wind"]
+        name="Eólica", marker_color="#10b981",
+        hovertemplate="Hora %{x}<br>Eólica: %{y:.2f} kg<extra></extra>",
     ))
-    
+    fig.add_trace(go.Bar(
+        x=results["hour"], y=results["emissions_gas_kg"],
+        name="Gas Natural", marker_color="#6366f1",
+        hovertemplate="Hora %{x}<br>Gas: %{y:.2f} kg<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        x=results["hour"], y=results["emissions_diesel_kg"],
+        name="Diésel", marker_color="#64748b",
+        hovertemplate="Hora %{x}<br>Diésel: %{y:.2f} kg<extra></extra>",
+    ))
+
     fig.update_layout(
-        **LAYOUT_DEFAULTS,
+        **{k: v for k, v in LAYOUT_DEFAULTS.items() if k not in ("margin", "legend")},
         title=_title("Emisiones de CO₂ por Fuente"),
         xaxis_title="Hora del día",
         yaxis_title="Emisiones (kg CO₂)",
         barmode="stack",
         height=400,
+        margin=dict(l=50, r=20, t=85, b=40),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.06,
+            xanchor="center", x=0.5,
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(size=11),
+        ),
     )
-    
+
     return fig
 
 
@@ -352,36 +364,48 @@ def plot_voltage(results: pd.DataFrame, params: Dict[str, Any]) -> go.Figure:
 
 def plot_costs(results: pd.DataFrame) -> go.Figure:
     """
-    Gráfica de costos horarios.
+    Gráfica de costos horarios — áreas para compra/venta + línea neta.
     """
     fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
+
+    fig.add_trace(go.Scatter(
         x=results["hour"], y=results["cost_buy_usd"],
-        name="Costo Compra", marker_color=COLORS["grid_buy"]
+        name="Costo compra",
+        line=dict(color="#ef4444", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(239, 68, 68, 0.15)",
+        hovertemplate="Hora %{x}<br>Compra: RD$%{y:,.0f}<extra></extra>",
     ))
-    
-    fig.add_trace(go.Bar(
+
+    fig.add_trace(go.Scatter(
         x=results["hour"], y=-results["revenue_sell_usd"],
-        name="Ingreso Venta", marker_color=COLORS["grid_sell"]
+        name="Ingreso venta",
+        line=dict(color="#22c55e", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(34, 197, 94, 0.15)",
+        hovertemplate="Hora %{x}<br>Venta: RD$%{y:,.0f}<extra></extra>",
     ))
-    
+
     fig.add_trace(go.Scatter(
         x=results["hour"], y=results["net_cost_usd"],
-        name="Costo Neto", line=dict(color="black", width=2),
-        mode="lines+markers"
+        name="Costo neto",
+        line=dict(color="#1e293b", width=2.5),
+        mode="lines+markers",
+        marker=dict(size=4),
+        hovertemplate="Hora %{x}<br>Neto: RD$%{y:,.0f}<extra></extra>",
     ))
-    
-    fig.add_hline(y=0, line_color="gray", line_width=0.5)
-    
+
+    fig.add_hline(y=0, line_color="#94a3b8", line_width=1, line_dash="dot")
+
     fig.update_layout(
-        **LAYOUT_DEFAULTS,
+        **{k: v for k, v in LAYOUT_DEFAULTS.items() if k != "margin"},
         title=_title("Costos Horarios de Energía"),
         xaxis_title="Hora del día",
-        yaxis_title="RD$ [+ costo / - ingreso]",
+        yaxis_title="RD$",
         height=400,
+        margin=dict(l=50, r=20, t=85, b=40),
     )
-    
+
     return fig
 
 
@@ -769,26 +793,28 @@ def plot_capex_breakdown(params: Dict[str, Any]) -> go.Figure:
     if pv_val > 0:
         components.append("Solar PV")
         values.append(pv_val)
-        colors_list.append(COLORS["solar"])
+        colors_list.append("#f59e0b")
     if wind_val > 0:
         components.append("Eólica")
         values.append(wind_val)
-        colors_list.append(COLORS["wind"])
+        colors_list.append("#10b981")
     if bess_val > 0:
         components.append("BESS")
         values.append(bess_val)
-        colors_list.append(COLORS["bess_charge"])
+        colors_list.append("#3b82f6")
 
     if params["non_renewable"]["diesel_available"]:
         d_val = params["non_renewable"]["diesel_max_kw"] * params["investment"]["diesel_cost_usd_kw"]
         components.append("Diésel")
         values.append(d_val)
-        colors_list.append(COLORS["diesel"])
+        colors_list.append("#64748b")
     if params["non_renewable"]["gas_available"]:
         g_val = params["non_renewable"]["gas_max_kw"] * params["investment"]["gas_cost_usd_kw"]
         components.append("Gas Natural")
         values.append(g_val)
-        colors_list.append(COLORS["gas"])
+        colors_list.append("#6366f1")
+
+    total = sum(values)
 
     fig = go.Figure()
 
@@ -796,22 +822,26 @@ def plot_capex_breakdown(params: Dict[str, Any]) -> go.Figure:
         y=components,
         x=values,
         orientation="h",
-        marker=dict(color=colors_list, line=dict(color="#ffffff", width=1)),
-        text=[f"RD${v:,.0f}" for v in values],
-        textposition="auto",
-        textfont=dict(size=11),
+        marker=dict(
+            color=colors_list,
+            line=dict(color="#ffffff", width=1.5),
+        ),
+        text=[f"RD${v:,.0f} ({v/total*100:.0f}%)" for v in values],
+        textposition="inside",
+        textfont=dict(size=11, color="#ffffff"),
+        insidetextanchor="middle",
         hovertemplate="%{y}: RD$%{x:,.0f}<extra></extra>",
     ))
 
     fig.update_layout(
-        title=_title("Desglose del CAPEX"),
-        xaxis=dict(title="Inversión (RD$)", gridcolor="rgba(0,0,0,0.05)"),
-        yaxis=dict(title=""),
+        title=_title(f"Desglose del CAPEX — RD${total:,.0f}"),
+        xaxis=dict(title="", showticklabels=False, showgrid=False),
+        yaxis=dict(title="", tickfont=dict(size=12)),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="#ffffff",
         font=dict(family="Inter, sans-serif", color="#1e293b"),
-        height=320,
-        margin=dict(t=60, b=40, l=80, r=20),
+        height=300,
+        margin=dict(t=60, b=20, l=80, r=20),
         showlegend=False,
     )
 
