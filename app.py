@@ -413,20 +413,68 @@ with tab_overview:
 with tab_energy:
     st.markdown('<div class="section-header">Balance Energético Horario</div>',
                 unsafe_allow_html=True)
+    st.caption(
+        "Desglose completo de la generación por fuente vs la demanda total. "
+        "Las barras apiladas muestran cada fuente; la línea roja, la demanda a cubrir."
+    )
 
     fig_balance = plot_energy_balance(results)
-    fig_balance.update_layout(height=420, margin=dict(t=50, b=40))
+    fig_balance.update_layout(height=440)
     st.plotly_chart(fig_balance, use_container_width=True)
 
+    st.divider()
+
+    # ─── Intercambio con Red + Generación Renovable vs Demanda ─────────
+    st.markdown('<div class="section-header">Intercambio con Red y Excedentes</div>',
+                unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         fig_grid = plot_grid_exchange(results)
-        fig_grid.update_layout(height=350, margin=dict(t=50, b=40))
+        fig_grid.update_layout(height=380)
         st.plotly_chart(fig_grid, use_container_width=True)
+        st.caption(
+            "Flujo de potencia con la red principal. "
+            "Área superior = importación (compra), área inferior = exportación (venta)."
+        )
     with col2:
         fig_curt = plot_curtailment(results)
-        fig_curt.update_layout(height=350, margin=dict(t=50, b=40))
+        fig_curt.update_layout(height=380)
         st.plotly_chart(fig_curt, use_container_width=True)
+        curtailment_total = results["curtailment_kw"].sum()
+        if curtailment_total < 1:
+            st.caption(
+                "No hay curtailment en este escenario. La generación renovable se absorbe "
+                "completamente entre demanda, BESS y venta a la red. "
+                "Aumente la capacidad renovable o reduzca la demanda para observar recortes."
+            )
+        else:
+            st.caption(
+                f"Energía renovable recortada: {curtailment_total:.0f} kWh. "
+                "Ocurre cuando la generación excede demanda + BESS + límite de exportación."
+            )
+
+    st.divider()
+
+    # ─── KPIs de balance ───────────────────────────────────────────────
+    st.markdown('<div class="section-header">Resumen de Flujos de Energía</div>',
+                unsafe_allow_html=True)
+    total_gen_ren = results["renewable_total_kw"].sum()
+    total_demand = results["total_demand_kw"].sum()
+    total_grid_buy = results["grid_buy_kw"].sum()
+    total_grid_sell = results["grid_sell_kw"].sum()
+    total_bess_charge = results["bess_charge_kw"].sum()
+    total_bess_discharge = results["bess_discharge_kw"].sum()
+
+    render_kpi_row([
+        ("Generación Renovable", f"{total_gen_ren:,.0f} kWh", ""),
+        ("Demanda Total", f"{total_demand:,.0f} kWh", ""),
+        ("Compra de Red", f"{total_grid_buy:,.0f} kWh", ""),
+        ("Venta a Red", f"{total_grid_sell:,.0f} kWh", ""),
+        ("Carga BESS", f"{total_bess_charge:,.0f} kWh", ""),
+        ("Descarga BESS", f"{total_bess_discharge:,.0f} kWh", ""),
+    ])
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     with st.expander("Datos horarios detallados"):
         display_cols = [

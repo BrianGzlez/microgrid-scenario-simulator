@@ -237,11 +237,12 @@ def plot_grid_exchange(results: pd.DataFrame) -> go.Figure:
     fig.add_hline(y=0, line_color="#94a3b8", line_width=1, line_dash="dot")
 
     fig.update_layout(
-        **LAYOUT_DEFAULTS,
+        **{k: v for k, v in LAYOUT_DEFAULTS.items() if k != "margin"},
         title=_title("Intercambio con la Red Principal"),
         xaxis_title="Hora del día",
         yaxis_title="Potencia (kW)",
         height=400,
+        margin=dict(l=50, r=20, t=85, b=40),
     )
 
     return fig
