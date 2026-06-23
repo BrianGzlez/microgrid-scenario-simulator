@@ -752,3 +752,146 @@ def plot_soh_evolution(results: pd.DataFrame) -> go.Figure:
     )
 
     return fig
+
+
+def plot_capex_breakdown(params: Dict[str, Any]) -> go.Figure:
+    """
+    Gráfica de barras horizontales con el desglose del CAPEX por componente.
+    """
+    components = []
+    values = []
+    colors_list = []
+
+    pv_val = params["renewable"]["pv_capacity_kw"] * params["investment"]["pv_cost_usd_kw"]
+    wind_val = params["renewable"]["wind_capacity_kw"] * params["investment"]["wind_cost_usd_kw"]
+    bess_val = params["bess"]["energy_capacity_kwh"] * params["investment"]["bess_cost_usd_kwh"]
+
+    if pv_val > 0:
+        components.append("Solar PV")
+        values.append(pv_val)
+        colors_list.append(COLORS["solar"])
+    if wind_val > 0:
+        components.append("Eólica")
+        values.append(wind_val)
+        colors_list.append(COLORS["wind"])
+    if bess_val > 0:
+        components.append("BESS")
+        values.append(bess_val)
+        colors_list.append(COLORS["bess_charge"])
+
+    if params["non_renewable"]["diesel_available"]:
+        d_val = params["non_renewable"]["diesel_max_kw"] * params["investment"]["diesel_cost_usd_kw"]
+        components.append("Diésel")
+        values.append(d_val)
+        colors_list.append(COLORS["diesel"])
+    if params["non_renewable"]["gas_available"]:
+        g_val = params["non_renewable"]["gas_max_kw"] * params["investment"]["gas_cost_usd_kw"]
+        components.append("Gas Natural")
+        values.append(g_val)
+        colors_list.append(COLORS["gas"])
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        y=components,
+        x=values,
+        orientation="h",
+        marker=dict(color=colors_list, line=dict(color="#ffffff", width=1)),
+        text=[f"RD${v:,.0f}" for v in values],
+        textposition="auto",
+        textfont=dict(size=11),
+        hovertemplate="%{y}: RD$%{x:,.0f}<extra></extra>",
+    ))
+
+    fig.update_layout(
+        title=_title("Desglose del CAPEX"),
+        xaxis=dict(title="Inversión (RD$)", gridcolor="rgba(0,0,0,0.05)"),
+        yaxis=dict(title=""),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#ffffff",
+        font=dict(family="Inter, sans-serif", color="#1e293b"),
+        height=320,
+        margin=dict(t=60, b=40, l=80, r=20),
+        showlegend=False,
+    )
+
+    return fig
+
+
+def plot_daily_revenue_cost(results: pd.DataFrame) -> go.Figure:
+    """
+    Gráfica de barras comparando ingresos vs costos por hora.
+    """
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=results["hour"], y=results["cost_buy_usd"],
+        name="Costo compra",
+        line=dict(color="#dc2626", width=2.5),
+        fill="tozeroy",
+        fillcolor="rgba(220, 38, 38, 0.1)",
+        hovertemplate="Hora %{x}<br>Compra: RD$%{y:,.2f}<extra></extra>",
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=results["hour"], y=results["revenue_sell_usd"],
+        name="Ingreso venta",
+        line=dict(color="#16a34a", width=2.5),
+        fill="tozeroy",
+        fillcolor="rgba(22, 163, 74, 0.1)",
+        hovertemplate="Hora %{x}<br>Venta: RD$%{y:,.2f}<extra></extra>",
+    ))
+
+    fig.update_layout(
+        **{k: v for k, v in LAYOUT_DEFAULTS.items() if k != "margin"},
+        title=_title("Costo de Compra vs Ingreso por Venta"),
+        xaxis_title="Hora del día",
+        yaxis_title="RD$",
+        height=380,
+        margin=dict(l=50, r=20, t=85, b=40),
+    )
+
+    return fig
+
+
+def plot_cost_by_period(results: pd.DataFrame) -> go.Figure:
+    """
+    Gráfica de costo neto agrupado por periodo del día (madrugada, mañana, tarde, noche).
+    """
+    periods = {
+        "Madrugada\n(0–6h)": results[(results["hour"] >= 0) & (results["hour"] < 6)]["net_cost_usd"].sum(),
+        "Mañana\n(6–12h)": results[(results["hour"] >= 6) & (results["hour"] < 12)]["net_cost_usd"].sum(),
+        "Tarde\n(12–18h)": results[(results["hour"] >= 12) & (results["hour"] < 18)]["net_cost_usd"].sum(),
+        "Noche\n(18–24h)": results[(results["hour"] >= 18) & (results["hour"] < 24)]["net_cost_usd"].sum(),
+    }
+
+    names = list(periods.keys())
+    vals = list(periods.values())
+    bar_colors = ["#1e40af" if v >= 0 else "#16a34a" for v in vals]
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        x=names, y=vals,
+        marker=dict(color=bar_colors, line=dict(color="#ffffff", width=1)),
+        text=[f"RD${v:,.0f}" for v in vals],
+        textposition="outside",
+        textfont=dict(size=11),
+        hovertemplate="%{x}: RD$%{y:,.0f}<extra></extra>",
+    ))
+
+    fig.add_hline(y=0, line_color="#94a3b8", line_width=1, line_dash="dot")
+
+    fig.update_layout(
+        title=_title("Costo Neto por Periodo del Día"),
+        xaxis=dict(title=""),
+        yaxis=dict(title="RD$", gridcolor="rgba(0,0,0,0.05)"),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#ffffff",
+        font=dict(family="Inter, sans-serif", color="#1e293b"),
+        height=340,
+        margin=dict(t=60, b=40, l=60, r=20),
+        showlegend=False,
+    )
+
+    return fig

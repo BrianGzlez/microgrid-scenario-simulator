@@ -21,7 +21,8 @@ from src.plots import (
     plot_curtailment, plot_radar_performance,
     plot_bess_power, plot_frequency_deviation,
     plot_energy_mix_donut, plot_hourly_cost_line,
-    plot_bess_energy_stored, plot_bess_cycles, plot_soh_evolution
+    plot_bess_energy_stored, plot_bess_cycles, plot_soh_evolution,
+    plot_capex_breakdown, plot_daily_revenue_cost, plot_cost_by_period
 )
 
 st.set_page_config(
@@ -620,19 +621,62 @@ with tab_economics:
         ("Costo Total Diario", f"RD${kpis['total_daily_cost_usd']:,.2f}", ""),
     ])
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.divider()
 
+    # ─── Costos horarios ───────────────────────────────────────────────
+    st.markdown('<div class="section-header">Costos Operativos Horarios</div>',
+                unsafe_allow_html=True)
+    st.caption(
+        "Desglose del costo neto por hora: costo de compra menos ingreso por venta de excedentes."
+    )
     col1, col2 = st.columns(2)
     with col1:
         fig_cost = plot_costs(results)
-        fig_cost.update_layout(height=380, margin=dict(t=50, b=40))
+        fig_cost.update_layout(height=380)
         st.plotly_chart(fig_cost, use_container_width=True)
+        st.caption("Barras: compra (+) e ingreso venta (-). Línea: costo neto horario.")
+    with col2:
+        fig_rev = plot_daily_revenue_cost(results)
+        st.plotly_chart(fig_rev, use_container_width=True)
+        st.caption("Comparación directa entre lo pagado por comprar y lo recibido por vender.")
+
+    st.divider()
+
+    # ─── Costo por periodo + Acumulado ─────────────────────────────────
+    st.markdown('<div class="section-header">Distribución de Costos</div>',
+                unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        fig_period = plot_cost_by_period(results)
+        st.plotly_chart(fig_period, use_container_width=True)
+        st.caption(
+            "Costo neto agrupado por periodo. Valores negativos = ganancia neta en ese periodo."
+        )
+    with col2:
+        fig_cum = plot_hourly_cost_line(results)
+        st.plotly_chart(fig_cum, use_container_width=True)
+        st.caption("Acumulación progresiva del costo operativo a lo largo del día.")
+
+    st.divider()
+
+    # ─── Inversión y emisiones ─────────────────────────────────────────
+    st.markdown('<div class="section-header">Inversión y Emisiones</div>',
+                unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        fig_capex = plot_capex_breakdown(params)
+        st.plotly_chart(fig_capex, use_container_width=True)
+        st.caption("Distribución de la inversión de capital por componente tecnológico.")
     with col2:
         fig_em = plot_emissions(results)
-        fig_em.update_layout(height=380, margin=dict(t=50, b=40))
+        fig_em.update_layout(height=320)
         st.plotly_chart(fig_em, use_container_width=True)
+        st.caption("Emisiones de CO₂ por fuente y hora. Renovables tienen emisiones de ciclo de vida mínimas.")
 
-    with st.expander("Desglose de inversión"):
+    st.divider()
+
+    # ─── Desglose tabla ────────────────────────────────────────────────
+    with st.expander("Desglose detallado de inversión"):
         st.markdown(f"""
         | Concepto | Valor |
         |----------|-------|
